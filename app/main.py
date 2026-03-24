@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 
 # استيراد ملفات قاعدة البيانات (سننشئها في الخطوة التالية)
 try:
-    from .database import SessionLocal, engine
-    from . import models
+    from app.database import SessionLocal, engine
+    from app import models
     # إنشاء الجداول تلقائياً عند التشغيل
     models.Base.metadata.create_all(bind=engine)
 except ImportWarning:
