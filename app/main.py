@@ -10,7 +10,7 @@ from app import models
 app = FastAPI(title="Gamal Store Backend")
 
 # ---------------------------
-# Static Files (آمن للإنتاج)
+# Static Files
 # ---------------------------
 if os.path.isdir("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -31,15 +31,43 @@ def get_db():
         db.close()
 
 # ---------------------------
-# Startup Event (إنشاء الجداول)
+# Startup (إنشاء الجداول + بيانات تجريبية)
 # ---------------------------
 @app.on_event("startup")
 def on_startup():
     try:
         models.Base.metadata.create_all(bind=engine)
-        print("✅ Database connected & tables ready")
+
+        db = SessionLocal()
+
+        # إضافة منتج تجريبي إذا لا يوجد بيانات
+        if db.query(models.Product).count() == 0:
+            sample_products = [
+                models.Product(
+                    name="Smart Routine System",
+                    description="نظام ذكي لتنظيم حياتك اليومية",
+                    price=25.0,
+                    old_price=40.0,
+                    image_url="/static/images/product1.jpg",
+                    category="Productivity"
+                ),
+                models.Product(
+                    name="Digital Store Kit",
+                    description="كل ما تحتاجه لبدء متجرك الرقمي",
+                    price=19.0,
+                    image_url="/static/images/product2.jpg",
+                    category="Business"
+                )
+            ]
+
+            db.add_all(sample_products)
+            db.commit()
+
+        db.close()
+        print("✅ Database ready")
+
     except Exception as e:
-        print(f"❌ Database error: {e}")
+        print(f"❌ DB Error: {e}")
 
 # ---------------------------
 # Routes
@@ -47,37 +75,54 @@ def on_startup():
 
 @app.get("/")
 def home(request: Request, db: Session = Depends(get_db)):
-    return templates.TemplateResponse("index.html", {
-        "request": request
-    })
+    products = db.query(models.Product).filter(models.Product.is_active == True).all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "products": products
+        }
+    )
 
 @app.get("/cart")
 def view_cart(request: Request):
-    return templates.TemplateResponse("cart.html", {
-        "request": request
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="cart.html",
+        context={}
+    )
 
 @app.get("/checkout")
 def checkout(request: Request):
-    return templates.TemplateResponse("checkout.html", {
-        "request": request
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="checkout.html",
+        context={}
+    )
 
 @app.get("/category")
 def category(request: Request):
-    return templates.TemplateResponse("page-category.html", {
-        "request": request
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="page-category.html",
+        context={}
+    )
 
 @app.get("/product/{id}")
 def product_detail(request: Request, id: int, db: Session = Depends(get_db)):
-    return templates.TemplateResponse("page-single.html", {
-        "request": request,
-        "product_id": id
-    })
+    product = db.query(models.Product).filter(models.Product.id == id).first()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="page-single.html",
+        context={
+            "product": product
+        }
+    )
 
 # ---------------------------
-# Health Check (مهم لـ Render)
+# Health Check (لـ Render)
 # ---------------------------
 @app.get("/health")
 def health():
