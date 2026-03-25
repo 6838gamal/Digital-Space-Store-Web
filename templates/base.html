@@ -38,7 +38,9 @@
    </head>
    <body>
 
-{% include 'index.html' %}
+
+{% block content %}
+{% endblock *}
 
       <!-- Javascript files-->
       <script src="{{ url_for('static', path='js/jquery.min.js')}}"></script>
