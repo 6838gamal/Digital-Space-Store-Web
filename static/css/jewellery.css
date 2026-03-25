@@ -1,0 +1,90 @@
+
+/* jewellery section start */
+
+.jewellery_section {
+    width: 100%;
+    float: left;
+    padding-bottom: 50px;
+}
+
+.jewellery_img {
+    width: 100%;
+    text-align: center;
+    margin: 50px 0px;
+    min-height: 293px;
+}
+
+#jewellery_main_slider a.carousel-control-next {
+    right: 615px;
+    top: 75%;
+}
+
+#jewellery_main_slider a.carousel-control-prev {
+    left: 615px;
+    top: 75%;
+}
+
+#jewellery_main_slider .carousel-control-next,
+#jewellery_main_slider .carousel-control-prev {
+    width: 55px;
+    height: 55px;
+    background-color: #30302e;
+    opacity: 1;
+    font-size: 30px;
+    color: #ffffff;
+}
+
+#jewellery_main_slider .carousel-control-next:focus,
+#jewellery_main_slider .carousel-control-next:hover,
+#jewellery_main_slider .carousel-control-prev:focus,
+#jewellery_main_slider .carousel-control-prev:hover {
+    color: #fff;
+    background-color: #f26522;
+}
+
+
+/* loader bar css start */
+
+.loader_main {
+    width: 100%;
+    text-align: center;
+    margin-top: 140px;
+}
+
+.loader {
+    border: 16px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 16px solid #414744;
+    border-right: 16px solid #f26522;
+    border-bottom: 16px solid #414744;
+    border-left: 16px solid #f26522;
+    width: 120px;
+    height: 120px;
+    -webkit-animation: spin 2s linear infinite;
+    animation: spin 6s linear infinite;
+    margin: 0 auto;
+}
+
+@-webkit-keyframes spin {
+    0% {
+        -webkit-transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* loader bar css end */
+
+
+/* jewellery section end */
