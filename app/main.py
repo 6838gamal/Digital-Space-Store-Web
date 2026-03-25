@@ -73,19 +73,19 @@ def on_startup():
 # Routes
 # ---------------------------
 
-@app.get("/")
-def home(request: Request, db: Session = Depends(get_db)):
+@app.get("/", name="home")
+def home(request: Request, tab: str = "home", db: Session = Depends(get_db)):
     products = db.query(models.Product).filter(models.Product.is_active == True).all()
-
     return templates.TemplateResponse(
         request=request,
         name="index.html",
         context={
-            "products": products
+            "products": products,
+            "active_tab": tab
         }
     )
 
-@app.get("/cart")
+@app.get("/cart", name="view_cart")
 def view_cart(request: Request):
     return templates.TemplateResponse(
         request=request,
@@ -93,7 +93,7 @@ def view_cart(request: Request):
         context={}
     )
 
-@app.get("/checkout")
+@app.get("/checkout", name="checkout")
 def checkout(request: Request):
     return templates.TemplateResponse(
         request=request,
@@ -101,7 +101,7 @@ def checkout(request: Request):
         context={}
     )
 
-@app.get("/category")
+@app.get("/category", name="category")
 def category(request: Request):
     return templates.TemplateResponse(
         request=request,
@@ -109,16 +109,29 @@ def category(request: Request):
         context={}
     )
 
-@app.get("/product/{id}")
+@app.get("/product/{id}", name="product_detail")
 def product_detail(request: Request, id: int, db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.id == id).first()
-
     return templates.TemplateResponse(
         request=request,
         name="page-single.html",
-        context={
-            "product": product
-        }
+        context={"product": product}
+    )
+
+@app.get("/profile", name="profile")
+def profile(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="profile.html",
+        context={}
+    )
+
+@app.get("/add-product", name="add_product")
+def add_product(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="add-product.html",
+        context={}
     )
 
 # ---------------------------

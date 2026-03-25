@@ -1,144 +1,41 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Digital Space Store</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
-    body { background: #0f172a; color: #fff; }
+{% extends "base.html" %}
+{% block content %}
 
-    .container { max-width: 1000px; margin: auto; padding: 20px; }
+<div class="profile_page container">
 
-    .profile {
-      text-align: center;
-      padding: 30px 20px;
-      background: #1e293b;
-      border-radius: 16px;
-      margin-bottom: 20px;
-    }
+  <!-- عنوان الصفحة -->
+  <h2 class="page_title">حسابي</h2>
 
-    .profile img {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      margin-bottom: 10px;
-    }
-
-    .profile h1 { font-size: 24px; margin-bottom: 10px; }
-    .profile p { color: #94a3b8; font-size: 14px; }
-
-    .buttons {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 15px;
-      flex-wrap: wrap;
-    }
-
-    .buttons a {
-      text-decoration: none;
-      padding: 10px 15px;
-      border-radius: 10px;
-      background: #3b82f6;
-      color: white;
-      font-size: 14px;
-      transition: 0.3s;
-    }
-
-    .buttons a:hover { background: #2563eb; }
-
-    .products {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 15px;
-    }
-
-    .card {
-      background: #1e293b;
-      padding: 15px;
-      border-radius: 12px;
-      transition: 0.3s;
-    }
-
-    .card:hover { transform: translateY(-5px); }
-
-    .card img {
-      width: 100%;
-      border-radius: 10px;
-      margin-bottom: 10px;
-    }
-
-    .card h3 { font-size: 16px; margin-bottom: 5px; }
-    .card p { font-size: 13px; color: #94a3b8; margin-bottom: 10px; }
-
-    .price {
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-
-    .buy-btn {
-      display: block;
-      text-align: center;
-      padding: 8px;
-      background: #10b981;
-      border-radius: 8px;
-      text-decoration: none;
-      color: white;
-      font-size: 14px;
-    }
-
-    .buy-btn:hover { background: #059669; }
-
-    @media (max-width: 600px) {
-      .profile h1 { font-size: 20px; }
-    }
-  </style>
-</head>
-<body>
-
-<div class="container">
-
-  <div class="profile">
-    <img src="https://via.placeholder.com/100" alt="logo">
-    <h1>Digital Space Store</h1>
-    <p>منتجات رقمية ذكية لحل مشاكلك اليومية</p>
-
-    <div class="buttons">
-      <a href="#">تصفح المنتجات</a>
-      <a href="#">تواصل معنا</a>
-    </div>
+  <!-- معلومات المستخدم -->
+  <div class="user_info">
+    <p><strong>الاسم:</strong> Gamal Almaqtary</p>
+    <p><strong>البريد الإلكتروني:</strong> user@example.com</p>
+    <p><strong>رقم الهاتف:</strong> +967 774 440 982</p>
   </div>
 
-  <div class="products">
+  <!-- نموذج تعديل البيانات -->
+  <div class="edit_profile">
+    <h3>تعديل بيانات الحساب</h3>
+    <form method="POST" action="/profile">
+      <label for="name">الاسم الكامل:</label>
+      <input type="text" id="name" name="name" value="Gamal Almaqtary" required>
 
-    <div class="card">
-      <img src="https://via.placeholder.com/300x150">
-      <h3>Smart Routine</h3>
-      <p>نظام ذكي لتنظيم يومك</p>
-      <div class="price">$25</div>
-      <a href="#" class="buy-btn">شراء</a>
-    </div>
+      <label for="email">البريد الإلكتروني:</label>
+      <input type="email" id="email" name="email" value="user@example.com" required>
 
-    <div class="card">
-      <img src="https://via.placeholder.com/300x150">
-      <h3>من وجبتين إلى مشروع</h3>
-      <p>حول الطبخ إلى دخل</p>
-      <div class="price">$15</div>
-      <a href="#" class="buy-btn">شراء</a>
-    </div>
+      <label for="phone">رقم الهاتف:</label>
+      <input type="tel" id="phone" name="phone" value="+967 774 440 982" required>
 
-    <div class="card">
-      <img src="https://via.placeholder.com/300x150">
-      <h3>العيش بلا إنترنت</h3>
-      <p>حلول ذكية بدون اتصال</p>
-      <div class="price">$10</div>
-      <a href="#" class="buy-btn">شراء</a>
-    </div>
+      <button type="submit" class="btn_save">حفظ التغييرات</button>
+    </form>
+  </div>
 
+  <!-- إجراءات الحساب -->
+  <div class="account_actions">
+    <a href="/orders" class="btn">عرض الطلبات</a>
+    <a href="/logout" class="btn logout">تسجيل الخروج</a>
   </div>
 
 </div>
-<a href="index.html">عودة</a>
-</body>
-</html>
+
+{% endblock %}

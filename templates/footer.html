@@ -1,57 +1,77 @@
- <div class="footer_section layout_padding">
-         <div class="container">
-            <div class="footer_logo"><a href="index.html"><img src="images/footer-logo.png"></a></div>
-            <div class="input_bt">
-               <input type="text" class="mail_bt" placeholder="Your Email" name="Your Email">
-               <span class="subscribe_bt" id="basic-addon2"><a href="#">Subscribe</a></span>
-            </div>
-            <div class="footer_menu">
-               <ul>
-                  <li><a href="#">Best Sellers</a></li>
-                  <li><a href="#">Gift Ideas</a></li>
-                  <li><a href="#">New Releases</a></li>
-                  <li><a href="#">Today's Deals</a></li>
-                  <li><a href="#">Customer Service</a></li>
-               </ul>
-            </div>
-            <div class="location_main">Help Line  Number : <a href="#">+1 1800 1200 1200</a></div>
-         </div>
-      </div>
-      <!-- footer section end -->
-      <!-- copyright section start -->
-      <div class="copyright_section">
-         <div class="container">
-            <p class="copyright_text">© 2020 All Rights Reserved. Design by <a href="https://html.design">Free html  Templates</a></p>
-         </div>
-      </div>
-      
-      <div class="bottom-bar">
+<div class="footer_section layout_padding">
+  <div class="container">
 
-  <a href="#" class="nav-item">
+    <!-- Logo -->
+    <div class="footer_logo">
+      <a href="{{ url_for('home') }}">
+        <img src="{{ url_for('static', path='images/footer-logo.png') }}">
+      </a>
+    </div>
+
+    <!-- Subscribe (تم تحسينه فقط) -->
+    <div class="input_bt">
+      <form>
+        <input type="email" class="mail_bt" placeholder="Your Email" required>
+        <button type="submit" class="subscribe_bt">Subscribe</button>
+      </form>
+    </div>
+
+    <!-- Menu Links (مربوطة بتابات حقيقية) -->
+    <div class="footer_menu">
+      <ul>
+        <li><a href="/?tab=best">Best Sellers</a></li>
+        <li><a href="/?tab=gifts">Gift Ideas</a></li>
+        <li><a href="/?tab=new">New Releases</a></li>
+        <li><a href="/?tab=deals">Today's Deals</a></li>
+        <li><a href="/?tab=support">Customer Service</a></li>
+      </ul>
+    </div>
+
+    <!-- Contact -->
+    <div class="location_main">
+      Help Line Number :
+      <a href="tel:+967774440982">+967 774 440 982</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- copyright -->
+<div class="copyright_section">
+  <div class="container">
+    <p class="copyright_text">
+      © 2026 Digital Space Store — All Rights Reserved
+    </p>
+  </div>
+</div>
+
+<!-- 🔥 Bottom Bar (محدث فقط الروابط) -->
+<div class="bottom-bar">
+
+  <a href="/?tab=home" class="nav-item">
     <span>🏠</span>
     <p>الرئيسية</p>
   </a>
 
-  <a href="#" class="nav-item">
+  <a href="/?tab=stats" class="nav-item">
     <span>📊</span>
     <p>إحصائيات</p>
   </a>
 
   <div class="center">
-    <button class="add-btn">+</button>
+    <a href="/add-product">
+      <button class="add-btn">+</button>
+    </a>
   </div>
 
-  <a href="#" class="nav-item">
+  <a href="{{ url_for('view_cart') }}" class="nav-item">
     <span>📦</span>
     <p>طلباتي</p>
   </a>
 
-  <a href="profile.html" class="nav-item">
+  <a href="/profile" class="nav-item">
     <span>👤</span>
     <p>حسابي</p>
   </a>
 
 </div>
-
-
-      <!-- copyright section end -->
