@@ -1,13 +1,6 @@
-
-
-
-
-
-
-/* footer section start */
-
-
-/* footer section start */
+/* =========================
+   Footer Section
+========================= */
 
 .footer_section {
     width: 100%;
@@ -35,9 +28,9 @@
     font-size: 18px;
     color: #fff;
     background-color: transparent;
-    padding: 5px 0px 5px 0px;
+    padding: 5px 0;
     height: 60px;
-    border: 0px;
+    border: 0;
 }
 
 input.mail_bt::placeholder {
@@ -50,9 +43,9 @@ input.mail_bt::placeholder {
     font-size: 16px;
     color: #f26522;
     background-color: transparent;
-    padding: 20px 0px 5px 0px;
+    padding: 20px 0 5px 0;
     border-radius: 30px;
-    border: 0px;
+    border: 0;
     text-transform: uppercase;
     text-align: right;
 }
@@ -72,8 +65,8 @@ input.mail_bt::placeholder {
 }
 
 .footer_menu ul {
-    margin: 0px;
-    padding: 0px;
+    margin: 0;
+    padding: 0;
     display: inline-block;
 }
 
@@ -81,7 +74,7 @@ input.mail_bt::placeholder {
     float: left;
     font-size: 16px;
     color: #f1f1f1;
-    padding: 20px 10px 0px 10px;
+    padding: 20px 10px 0 10px;
 }
 
 .footer_menu li a {
@@ -95,15 +88,11 @@ input.mail_bt::placeholder {
 .location_main {
     width: 100%;
     margin: 0 auto;
-    padding-top: 30px;
+    padding: 30px;
     text-align: center;
-}
-
-.location_main {
     float: left;
     font-size: 16px;
     color: #ffffff;
-    padding: 30px 30px 30px 30px;
 }
 
 .location_main a {
@@ -114,17 +103,14 @@ input.mail_bt::placeholder {
     color: #f26522;
 }
 
-
-/* footer section end */
-
-
-/* copyright section start */
+/* =========================
+   Copyright
+========================= */
 
 .copyright_section {
     width: 100%;
     float: left;
     background-color: #252525;
-    height: auto;
 }
 
 .copyright_text {
@@ -133,123 +119,131 @@ input.mail_bt::placeholder {
     color: #ffffff;
     text-align: center;
     font-size: 16px;
-    margin: 20px 0px;
+    margin: 20px 0;
 }
 
-.copyright_text a {
-    color: #ffffff;
-}
+/* =========================
+   Bottom Bar
+========================= */
 
-.copyright_text a:hover {
-    color: #f26522;
-}
-
-.margin_top90 {
-    margin-top: 90px;
-}
-
-
-/* copyright section end */
-
-
-/* Bottom Bar باستخدام Grid */
 .bottom-bar {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  height: 70px;
-  background: #0f172a;
-  display: grid;
-  grid-template-columns: 1fr 1fr 80px 1fr 1fr;
-  align-items: center;
-  border-top: 1px solid #1e293b;
-  z-index: 1000;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+
+    background: #0f172a;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr 80px 1fr 1fr;
+    align-items: center;
+
+    border-top: 1px solid #1e293b;
+
+    z-index: 9998;
 }
 
-/* العناصر */
+/* nav items */
 .nav-item {
-  text-align: center;
-  color: #94a3b8;
-  text-decoration: none;
-  font-size: 11px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+    text-align: center;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 11px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .nav-item span {
-  font-size: 20px;
+    font-size: 20px;
 }
 
-/* زر المنتصف */
+/* center button */
 .center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  top: -20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    top: -20px;
 }
 
 .add-btn {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(135deg, #38bdf8, #6366f1);
-  color: white;
-  font-size: 28px;
-  cursor: pointer;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-  transition: 0.2s;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+
+    background: linear-gradient(135deg, #38bdf8, #6366f1);
+    color: white;
+    font-size: 28px;
+
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+
+    transition: 0.2s;
 }
 
 .add-btn:hover {
-  transform: scale(1.1);
+    transform: scale(1.1);
 }
 
 .add-btn:active {
-  transform: scale(0.95);
+    transform: scale(0.95);
 }
 
-/* Responsive */
-@media (max-width: 400px) {
-  .nav-item p {
-    display: none; /* نخفي النص */
-  }
-
-  .bottom-bar {
-    grid-template-columns: 1fr 1fr 70px 1fr 1fr;
-  }
-
-  .add-btn {
-    width: 55px;
-    height: 55px;
-  }
-}
-
-
+/* =========================
+   FAB (Floating Button)
+========================= */
 
 #fab {
-  position: fixed;
-  bottom: 90px;
-  right: 20px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ff6a00, #ee0979);
-  color: #fff;
-  font-size: 26px;
-  text-decoration: none;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.3);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: 0.3s;
+    position: fixed;
+    bottom: 85px;
+    right: 16px;
+
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+
+    background: linear-gradient(135deg, #ff6a00, #ee0979);
+    color: #fff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 26px;
+    text-decoration: none;
+
+    box-shadow: 0 12px 25px rgba(0,0,0,0.35);
+
+    z-index: 99999;
+
+    transition: 0.25s ease;
 }
 
 #fab:hover {
-  transform: scale(1.1);
+    transform: scale(1.1);
 }
 
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 400px) {
+
+    .nav-item p {
+        display: none;
+    }
+
+    .bottom-bar {
+        grid-template-columns: 1fr 1fr 70px 1fr 1fr;
+    }
+
+    .add-btn {
+        width: 55px;
+        height: 55px;
+    }
+}
