@@ -1,0 +1,50 @@
+<!-- Chat Container -->
+<div class="chat-container">
+
+  <!-- Header -->
+  <div class="chat-header">
+    <div class="chat-title">🤖 AI Assistant</div>
+    <div class="chat-status">● Online</div>
+  </div>
+
+  <!-- Messages -->
+  <div class="chat-messages" id="chatMessages">
+
+    <div class="message bot">
+      مرحباً 👋 كيف أستطيع مساعدتك اليوم؟
+    </div>
+
+  </div>
+
+  <!-- Input -->
+  <div class="chat-input">
+    <input type="text" id="userInput" placeholder="اكتب رسالتك..." />
+    <button onclick="sendMessage()">➤</button>
+  </div>
+
+</div>
+
+<!-- Script -->
+<script>
+  function sendMessage() {
+    const input = document.getElementById("userInput");
+    const messages = document.getElementById("chatMessages");
+
+    if (input.value.trim() === "") return;
+
+    // رسالة المستخدم
+    const userMsg = document.createElement("div");
+    userMsg.className = "message user";
+    userMsg.innerText = input.value;
+    messages.appendChild(userMsg);
+
+    // رد وهمي (مؤقت)
+    const botMsg = document.createElement("div");
+    botMsg.className = "message bot";
+    botMsg.innerText = "جاري التفكير...";
+    messages.appendChild(botMsg);
+
+    messages.scrollTop = messages.scrollHeight;
+    input.value = "";
+  }
+</script>

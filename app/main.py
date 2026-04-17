@@ -134,6 +134,15 @@ def add_product(request: Request):
         context={}
     )
 
+@app.get("/chat", name="chat")
+def chat(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="chat.html",
+        context={}
+    )
+
+
 # ---------------------------
 # Health Check (لـ Render)
 # ---------------------------
