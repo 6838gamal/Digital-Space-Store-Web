@@ -1,27 +1,49 @@
-# Project Overview
+# Digital Space Store (Gamal Store Backend)
 
-Digital Space Store is a Python FastAPI web application using server-rendered Jinja2 templates, static assets, SQLAlchemy models, and a SQLite development database fallback at `store.db`.
+## Overview
+A FastAPI-based e-commerce web application featuring a customer-facing storefront, an admin dashboard, and an integrated AI Chat Agent for product discovery. The app supports Arabic and English.
 
-# Project Structure
+## Tech Stack
+- **Backend**: Python 3.12 + FastAPI + Uvicorn
+- **Database**: SQLAlchemy ORM with SQLite (default) or PostgreSQL (production)
+- **Templating**: Jinja2 server-side rendered HTML
+- **Frontend**: Bootstrap 4, jQuery
+- **Auth**: Session-based (itsdangerous) + optional Google OAuth2 for admins
 
-- `app/main.py` defines the FastAPI app, page routes, static file mounting, and startup database initialization.
-- `app/chat_agent.py` contains the shopping assistant logic, retrieval over products/store knowledge, intent detection, and navigation actions.
-- `app/database.py` configures SQLAlchemy using `DATABASE_URL` when present or SQLite locally.
-- `app/models.py` contains Product, Order, and KnowledgeItem database models.
-- `templates/` contains Jinja2 pages and partials.
-- `static/` contains CSS and JavaScript assets.
+## Project Structure
+```
+app/
+  main.py          - FastAPI app, all routes and startup logic
+  models.py        - SQLAlchemy ORM models
+  database.py      - DB connection and session management
+  chat_agent.py    - AI chat agent (intent detection + RAG)
+templates/         - Jinja2 HTML templates
+static/            - CSS, JS, images
+requirements.txt   - Python dependencies
+```
 
-# Chat/RAG Setup
+## Running the App
+The app starts via the "Start application" workflow:
+```
+uvicorn app.main:app --host 0.0.0.0 --port 5000
+```
 
-- `/chat` is the shopping assistant screen opened by the floating button.
-- `/api/chat` accepts chat messages and returns an Arabic assistant reply, relevant retrieval matches, suggestions, and navigation actions.
-- `/api/knowledge` can list or add active store knowledge snippets for retrieval. This makes the assistant RAG-ready: product data and knowledge snippets are already separated from the response layer so embeddings/LLM generation can be added later.
-- Chat conversations are persisted in `ChatConversation` and `ChatMessageRecord` and shown in a sidebar on `/chat`.
-- `/admin` is an independent management panel for products, store participants, admin users, and RAG training data.
-- Google sign-in is wired through `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` when configured; development mode also includes a local demo admin login for previewing the panel.
+## Key Routes
+- `GET /` — Storefront home page
+- `GET /admin` — Admin dashboard (login required)
+- `GET /admin/login` — Admin login page (demo login available in non-production)
+- `POST /api/chat` — AI chat agent endpoint
+- `GET /health` — Health check
 
-# Replit Setup
+## Environment Variables
+- `SESSION_SECRET` — Secret key for session middleware (required for production)
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — Optional, enables Google OAuth for admin login
+- `NODE_ENV` — Set to `production` to disable demo admin login
 
-- Run command: `uvicorn app.main:app --host 0.0.0.0 --port 5000`
-- The web workflow serves the app on port 5000 for Replit preview.
-- Deployment should run the same FastAPI app with Uvicorn on `0.0.0.0:5000`.
+## Database
+- Defaults to SQLite (`store.db`) for development
+- Supports PostgreSQL via `DATABASE_URL` environment variable
+- Tables and seed data are created automatically on startup
+
+## Dependencies
+All installed via pip: fastapi, uvicorn, sqlalchemy, python-dotenv, jinja2, psycopg2-binary, itsdangerous, python-multipart

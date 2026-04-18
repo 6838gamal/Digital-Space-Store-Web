@@ -11,3 +11,11 @@ uvicorn
 psycopg2-binary
 itsdangerous
 python-multipart
+fastapi
+itsdangerous
+jinja2
+psycopg2-binary
+python-dotenv
+python-multipart
+sqlalchemy
+uvicorn
