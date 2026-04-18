@@ -1,182 +1,312 @@
 {% extends "base.html" %}
 {% block content %}
-<main class="chat-page" dir="rtl">
-  <aside class="chat-sidebar">
-    <div class="chat-sidebar-header">
-      <strong>المحادثات</strong>
-      <button type="button" id="newConversation">+ جديدة</button>
+<style>
+  /* Hide store chrome on chat page */
+  #back-to-top, #sidenav-overlay { display: none !important; }
+</style>
+
+<!-- ===== CHAT CONVERSATION DRAWER ===== -->
+<div id="chatDrawer" class="chat-drawer">
+  <div class="chat-drawer-header">
+    <span class="chat-drawer-title" data-en="Conversations" data-ar="المحادثات">Conversations</span>
+    <div class="chat-drawer-controls">
+      <button class="chat-drawer-new" id="newConversation" data-en="+ New" data-ar="+ جديدة">+ New</button>
+      <button class="chat-drawer-close" id="chatDrawerClose" aria-label="Close">&#x2715;</button>
     </div>
+  </div>
+  <div class="chat-drawer-body">
     <div class="conversation-list" id="conversationList"></div>
-    <a class="admin-shortcut" href="/admin">إدارة المتجر</a>
-  </aside>
+  </div>
+</div>
+<div id="chatDrawerOverlay"></div>
+<!-- ===== /CHAT DRAWER ===== -->
 
-  <section class="chat-shell">
-    <div class="chat-header">
-      <div>
-        <div class="chat-title">وكيل التسوق الذكي</div>
-        <p>اسأل عن المنتجات أو اطلب مني فتح السلة والدفع والطلبات والحساب.</p>
+<!-- ===== MAIN CHAT PAGE ===== -->
+<div class="chat-page-clean">
+
+  <!-- Top Bar -->
+  <div class="chat-topbar">
+    <button class="chat-menu-btn" id="chatMenuBtn" aria-label="Open conversations">
+      <span class="chat-menu-icon">
+        <span></span><span></span><span></span>
+      </span>
+    </button>
+
+    <div class="chat-topbar-title">
+      <div class="chat-topbar-name" data-en="AI Shopping Assistant" data-ar="وكيل التسوق الذكي">
+        AI Shopping Assistant
       </div>
-      <a class="chat-home-link" href="/">العودة للمتجر</a>
-    </div>
-
-    <div class="chat-messages" id="chatMessages">
-      <div class="message bot">
-        مرحباً، أنا وكيل التسوق. أستطيع اقتراح المنتجات وتوجيهك داخل المتجر عبر الدردشة. ماذا تبحث عنه اليوم؟
+      <div class="chat-topbar-sub" data-en="Ask me anything about products" data-ar="اسألني عن أي منتج أو خدمة">
+        Ask me anything about products
       </div>
     </div>
 
-    <div class="quick-prompts" id="quickPrompts">
-      <button type="button" data-prompt="اقترح لي أفضل منتج متاح">اقترح منتج</button>
-      <button type="button" data-prompt="افتح السلة">السلة</button>
-      <button type="button" data-prompt="كيف أكمل الطلب؟">الدفع</button>
-      <button type="button" data-prompt="ماذا تستطيع أن تفعل؟">مزايا الوكيل</button>
-    </div>
+    <a class="chat-back-btn" href="/" data-en="Store" data-ar="المتجر">Store</a>
+  </div>
 
-    <form class="chat-input" id="chatForm">
-      <input type="text" id="userInput" placeholder="اكتب طلبك هنا..." autocomplete="off" />
-      <button type="submit">إرسال</button>
-    </form>
-  </section>
-</main>
+  <!-- Messages Area -->
+  <div class="chat-messages-area" id="chatMessages">
+    <div class="chat-welcome">
+      <div class="chat-welcome-icon">🤖</div>
+      <div class="chat-welcome-text" data-en="Hello! I'm your AI shopping assistant. I can help you find products, browse categories, or guide you through checkout." data-ar="مرحباً! أنا وكيل التسوق الذكي. أستطيع مساعدتك في إيجاد المنتجات والتصفح والدفع.">
+        Hello! I'm your AI shopping assistant. I can help you find products, browse categories, or guide you through checkout.
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Prompts -->
+  <div class="chat-quick-bar" id="quickPrompts">
+    <button type="button" data-prompt-en="Suggest me a product" data-prompt-ar="اقترح لي منتجاً"
+            data-en="Suggest product" data-ar="اقترح منتج">Suggest product</button>
+    <button type="button" data-prompt-en="Open my cart" data-prompt-ar="افتح السلة"
+            data-en="Cart" data-ar="السلة">Cart</button>
+    <button type="button" data-prompt-en="How do I checkout?" data-prompt-ar="كيف أكمل الطلب؟"
+            data-en="Checkout" data-ar="الدفع">Checkout</button>
+    <button type="button" data-prompt-en="What can you do?" data-prompt-ar="ماذا تستطيع أن تفعل؟"
+            data-en="Capabilities" data-ar="مزايا الوكيل">Capabilities</button>
+  </div>
+
+  <!-- Input Bar -->
+  <form class="chat-input-bar" id="chatForm">
+    <input type="text" id="userInput"
+           data-en-placeholder="Type your message..." data-ar-placeholder="اكتب طلبك هنا..."
+           placeholder="Type your message..." autocomplete="off" />
+    <button type="submit" class="chat-send-btn" aria-label="Send">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </form>
+
+</div>
+<!-- ===== /MAIN CHAT PAGE ===== -->
 
 <script>
-  const chatHistory = [];
-  let currentConversationId = null;
-  const form = document.getElementById("chatForm");
-  const input = document.getElementById("userInput");
-  const messages = document.getElementById("chatMessages");
-  const quickPrompts = document.getElementById("quickPrompts");
-  const conversationList = document.getElementById("conversationList");
-  const newConversation = document.getElementById("newConversation");
+(function() {
+  var chatHistory = [];
+  var currentConversationId = null;
 
-  function appendMessage(role, text, actions = []) {
-    const wrapper = document.createElement("div");
-    wrapper.className = `message ${role}`;
-    wrapper.innerText = text;
-    messages.appendChild(wrapper);
+  var form        = document.getElementById('chatForm');
+  var input       = document.getElementById('userInput');
+  var messages    = document.getElementById('chatMessages');
+  var quickBar    = document.getElementById('quickPrompts');
+  var convList    = document.getElementById('conversationList');
+  var newConvBtn  = document.getElementById('newConversation');
+  var menuBtn     = document.getElementById('chatMenuBtn');
+  var drawer      = document.getElementById('chatDrawer');
+  var overlay     = document.getElementById('chatDrawerOverlay');
+  var drawerClose = document.getElementById('chatDrawerClose');
 
-    if (actions.length) {
-      const actionList = document.createElement("div");
-      actionList.className = "message-actions";
-      actions.forEach((item) => {
-        const link = document.createElement("a");
-        link.href = item.url;
-        link.innerText = item.label;
-        actionList.appendChild(link);
+  // ----- Drawer -----
+  function openDrawer() {
+    drawer.classList.add('open');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    loadConversations();
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove('open');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  menuBtn.addEventListener('click', openDrawer);
+  drawerClose.addEventListener('click', closeDrawer);
+  overlay.addEventListener('click', closeDrawer);
+
+  // ----- Language-aware welcome & prompts -----
+  function getLang() {
+    return document.documentElement.getAttribute('lang') || 'en';
+  }
+
+  function getPromptText(btn) {
+    var lang = getLang();
+    return lang === 'ar'
+      ? (btn.getAttribute('data-prompt-ar') || btn.getAttribute('data-prompt-en'))
+      : (btn.getAttribute('data-prompt-en') || btn.getAttribute('data-prompt-ar'));
+  }
+
+  // ----- Messages -----
+  function appendMessage(role, text, actions) {
+    // Remove welcome block on first message
+    var welcome = messages.querySelector('.chat-welcome');
+    if (welcome) welcome.remove();
+
+    var wrap = document.createElement('div');
+    wrap.className = 'chat-bubble-wrap ' + role;
+    var bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + role;
+    bubble.innerText = text;
+    wrap.appendChild(bubble);
+    messages.appendChild(wrap);
+
+    if (actions && actions.length) {
+      var actionRow = document.createElement('div');
+      actionRow.className = 'chat-action-row';
+      actions.forEach(function(item) {
+        var a = document.createElement('a');
+        a.href = item.url;
+        a.className = 'chat-action-chip';
+        a.innerText = item.label;
+        actionRow.appendChild(a);
       });
-      messages.appendChild(actionList);
+      messages.appendChild(actionRow);
     }
 
     messages.scrollTop = messages.scrollHeight;
   }
 
-  function resetMessages() {
-    chatHistory.length = 0;
-    messages.innerHTML = "";
-    appendMessage("bot", "مرحباً، أنا وكيل التسوق. أستطيع اقتراح المنتجات وتوجيهك داخل المتجر عبر الدردشة. ماذا تبحث عنه اليوم؟");
-  }
-
-  async function loadConversations() {
-    const response = await fetch("/api/chat/conversations");
-    const conversations = await response.json();
-    conversationList.innerHTML = "";
-    if (!conversations.length) {
-      const empty = document.createElement("div");
-      empty.className = "conversation-empty";
-      empty.innerText = "لا توجد محادثات بعد";
-      conversationList.appendChild(empty);
-      return;
-    }
-    conversations.forEach((conversation) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = conversation.id === currentConversationId ? "active" : "";
-      button.innerText = conversation.title || "محادثة";
-      button.addEventListener("click", () => openConversation(conversation.id));
-      conversationList.appendChild(button);
-    });
-  }
-
-  async function openConversation(conversationId) {
-    const response = await fetch(`/api/chat/conversations/${conversationId}`);
-    const data = await response.json();
-    currentConversationId = data.id;
-    chatHistory.length = 0;
-    messages.innerHTML = "";
-    if (!data.messages.length) {
-      appendMessage("bot", "محادثة جديدة. كيف أساعدك في التسوق؟");
-    }
-    data.messages.forEach((message) => {
-      appendMessage(message.role === "assistant" ? "bot" : "user", message.content);
-      chatHistory.push({ role: message.role, content: message.content });
-    });
-    await loadConversations();
-  }
-
   function appendTyping() {
-    const typing = document.createElement("div");
-    typing.className = "message bot typing";
-    typing.id = "typingMessage";
-    typing.innerText = "الوكيل يبحث في معرفة المتجر...";
-    messages.appendChild(typing);
+    var wrap = document.createElement('div');
+    wrap.className = 'chat-bubble-wrap bot';
+    wrap.id = 'typingWrap';
+    var bubble = document.createElement('div');
+    bubble.className = 'chat-bubble bot typing';
+    bubble.innerHTML = '<span></span><span></span><span></span>';
+    wrap.appendChild(bubble);
+    messages.appendChild(wrap);
     messages.scrollTop = messages.scrollHeight;
   }
 
   function removeTyping() {
-    const typing = document.getElementById("typingMessage");
-    if (typing) typing.remove();
+    var t = document.getElementById('typingWrap');
+    if (t) t.remove();
   }
 
-  async function sendMessage(text) {
-    const message = text.trim();
-    if (!message) return;
+  function resetMessages() {
+    chatHistory.length = 0;
+    messages.innerHTML = '';
+    var welcome = document.createElement('div');
+    welcome.className = 'chat-welcome';
+    var lang = getLang();
+    welcome.innerHTML =
+      '<div class="chat-welcome-icon">🤖</div>' +
+      '<div class="chat-welcome-text">' +
+      (lang === 'ar'
+        ? 'مرحباً! أنا وكيل التسوق الذكي. أستطيع مساعدتك في إيجاد المنتجات والتصفح والدفع.'
+        : 'Hello! I\'m your AI shopping assistant. I can help you find products, browse categories, or guide you through checkout.') +
+      '</div>';
+    messages.appendChild(welcome);
+  }
 
-    appendMessage("user", message);
-    chatHistory.push({ role: "user", content: message });
-    input.value = "";
+  // ----- Conversations -----
+  async function loadConversations() {
+    try {
+      var resp = await fetch('/api/chat/conversations');
+      var list = await resp.json();
+      convList.innerHTML = '';
+      var lang = getLang();
+
+      if (!list.length) {
+        var empty = document.createElement('div');
+        empty.className = 'conversation-empty';
+        empty.textContent = lang === 'ar' ? 'لا توجد محادثات بعد' : 'No conversations yet';
+        convList.appendChild(empty);
+        return;
+      }
+
+      list.forEach(function(conv) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'conv-item' + (conv.id === currentConversationId ? ' active' : '');
+        btn.innerHTML =
+          '<span class="conv-icon">💬</span>' +
+          '<span class="conv-title">' + (conv.title || (lang === 'ar' ? 'محادثة' : 'Chat')) + '</span>';
+        btn.addEventListener('click', function() {
+          openConversation(conv.id);
+          closeDrawer();
+        });
+        convList.appendChild(btn);
+      });
+    } catch(e) {}
+  }
+
+  async function openConversation(convId) {
+    try {
+      var resp = await fetch('/api/chat/conversations/' + convId);
+      var data = await resp.json();
+      currentConversationId = data.id;
+      chatHistory.length = 0;
+      messages.innerHTML = '';
+      var lang = getLang();
+
+      if (!data.messages || !data.messages.length) {
+        appendMessage('bot', lang === 'ar' ? 'محادثة جديدة. كيف أساعدك؟' : 'New conversation. How can I help?');
+      } else {
+        data.messages.forEach(function(m) {
+          appendMessage(m.role === 'assistant' ? 'bot' : 'user', m.content);
+          chatHistory.push({ role: m.role, content: m.content });
+        });
+      }
+    } catch(e) {}
+  }
+
+  // ----- Send -----
+  async function sendMessage(text) {
+    var msg = text.trim();
+    if (!msg) return;
+
+    appendMessage('user', msg);
+    chatHistory.push({ role: 'user', content: msg });
+    input.value = '';
     appendTyping();
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history: chatHistory.slice(-8), conversation_id: currentConversationId }),
+      var resp = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: msg,
+          history: chatHistory.slice(-8),
+          conversation_id: currentConversationId
+        })
       });
 
-      if (!response.ok) {
-        throw new Error("تعذر الاتصال بالوكيل");
-      }
-
-      const data = await response.json();
+      if (!resp.ok) throw new Error('error');
+      var data = await resp.json();
       currentConversationId = data.conversation_id;
       removeTyping();
-      appendMessage("bot", data.reply, data.actions || []);
-      chatHistory.push({ role: "assistant", content: data.reply });
-      await loadConversations();
-    } catch (error) {
+      appendMessage('bot', data.reply, data.actions || []);
+      chatHistory.push({ role: 'assistant', content: data.reply });
+    } catch(e) {
       removeTyping();
-      appendMessage("bot", "حدث خطأ أثناء معالجة الطلب. حاول مرة أخرى بعد قليل.");
+      var lang = getLang();
+      appendMessage('bot', lang === 'ar' ? 'حدث خطأ. حاول مرة أخرى.' : 'Something went wrong. Please try again.');
     }
   }
 
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
+  // ----- Events -----
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
     sendMessage(input.value);
   });
 
-  quickPrompts.addEventListener("click", (event) => {
-    const prompt = event.target.dataset.prompt;
-    if (prompt) sendMessage(prompt);
+  quickBar.addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (btn) sendMessage(getPromptText(btn));
   });
 
-  newConversation.addEventListener("click", async () => {
-    const response = await fetch("/api/chat/conversations", { method: "POST" });
-    const data = await response.json();
-    currentConversationId = data.id;
-    resetMessages();
-    await loadConversations();
+  newConvBtn.addEventListener('click', async function() {
+    try {
+      var resp = await fetch('/api/chat/conversations', { method: 'POST' });
+      var data = await resp.json();
+      currentConversationId = data.id;
+      resetMessages();
+      closeDrawer();
+      await loadConversations();
+    } catch(e) {}
   });
 
+  // Keyboard shortcut: Escape closes drawer
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeDrawer();
+  });
+
+  // Load conversations on page load (for drawer)
   loadConversations();
+})();
 </script>
+
 {% endblock %}
