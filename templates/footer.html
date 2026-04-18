@@ -1,83 +1,74 @@
 <div class="footer_section layout_padding">
   <div class="container">
 
-    <!-- Logo -->
     <div class="footer_logo">
       <a href="{{ url_for('home') }}">
-        <img src="{{ url_for('static', path='images/footer-logo.png') }}">
+        <img src="{{ url_for('static', path='images/footer-logo.png') }}" alt="Logo">
       </a>
     </div>
 
-    <!-- Subscribe -->
     <div class="input_bt">
       <form>
-        <input type="email" class="mail_bt" placeholder="Your Email" required>
-        <button type="submit" class="subscribe_bt">Subscribe</button>
+        <input type="email" class="mail_bt"
+               data-en-placeholder="Your Email" data-ar-placeholder="بريدك الإلكتروني"
+               placeholder="Your Email" required>
+        <button type="submit" class="subscribe_bt"
+                data-en="Subscribe" data-ar="اشترك">Subscribe</button>
       </form>
     </div>
 
-    <!-- Menu Links -->
     <div class="footer_menu">
       <ul>
-        <li><a href="/?tab=best">Best Sellers</a></li>
-        <li><a href="/?tab=gifts">Gift Ideas</a></li>
-        <li><a href="/?tab=new">New Releases</a></li>
-        <li><a href="/?tab=deals">Today's Deals</a></li>
-        <li><a href="/?tab=support">Customer Service</a></li>
+        <li><a href="/?tab=best" data-en="Best Sellers" data-ar="الأكثر مبيعاً">Best Sellers</a></li>
+        <li><a href="/?tab=gifts" data-en="Gift Ideas" data-ar="هدايا">Gift Ideas</a></li>
+        <li><a href="/?tab=new" data-en="New Releases" data-ar="وصل حديثاً">New Releases</a></li>
+        <li><a href="/?tab=deals" data-en="Today's Deals" data-ar="عروض اليوم">Today's Deals</a></li>
+        <li><a href="/?tab=support" data-en="Customer Service" data-ar="خدمة العملاء">Customer Service</a></li>
       </ul>
     </div>
 
-    <!-- Contact -->
     <div class="location_main">
-      Help Line Number :
+      <span data-en="Help Line Number:" data-ar="رقم المساعدة:">Help Line Number:</span>
       <a href="tel:+967774440982">+967 774 440 982</a>
     </div>
 
   </div>
 </div>
 
-<!-- copyright -->
 <div class="copyright_section">
   <div class="container">
-    <p class="copyright_text">
+    <p class="copyright_text"
+       data-en="© 2026 Digital Space Store — All Rights Reserved"
+       data-ar="© 2026 ديجيتال سبيس ستور — جميع الحقوق محفوظة">
       © 2026 Digital Space Store — All Rights Reserved
     </p>
   </div>
 </div>
 
-<!-- Bottom Bar -->
+<!-- Bottom Navigation Bar -->
 <div class="bottom-bar">
-
   <a href="/?tab=home" class="nav-item">
     <span>🏠</span>
-    <p>الرئيسية</p>
+    <p data-en="Home" data-ar="الرئيسية">Home</p>
   </a>
-
-  <a href="/?tab=stats" class="nav-item">
-    <span>📊</span>
-    <p>إحصائيات</p>
+  <a href="/?tab=new" class="nav-item">
+    <span>✨</span>
+    <p data-en="New" data-ar="جديد">New</p>
   </a>
-
   <div class="center">
-    <a href="/add-product">
-      <button class="add-btn">+</button>
+    <a href="/cart">
+      <button class="add-btn">🛒</button>
     </a>
   </div>
-
-  <a href="{{ url_for('view_cart') }}" class="nav-item">
+  <a href="/orders" class="nav-item">
     <span>📦</span>
-    <p>طلباتي</p>
+    <p data-en="Orders" data-ar="طلباتي">Orders</p>
   </a>
-
-  <!-- ✅ تم إصلاح الرابط -->
   <a href="/profile" class="nav-item">
     <span>👤</span>
-    <p>حسابي</p>
+    <p data-en="Account" data-ar="حسابي">Account</p>
   </a>
-
 </div>
 
-<!-- 🔥 Floating Action Button -->
-<a href="/chat" id="fab">
-  🤖
-</a>
+<!-- Floating Chat Button -->
+<a href="/chat" id="fab" title="AI Chat">🤖</a>

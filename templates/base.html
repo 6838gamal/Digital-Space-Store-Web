@@ -1,72 +1,327 @@
 <!DOCTYPE html>
-<html lang="en">
-   <head>
-      <!-- basic -->
-      <meta charset="utf-8">
-      <meta http-equiv="X-UA-Compatible" content="IE=edge">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <!-- mobile metas -->
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <meta name="viewport" content="initial-scale=1, maximum-scale=1">
-      <!-- site metas -->
-      <title>Digital Space Store</title>
-      <meta name="keywords" content="">
-      <meta name="description" content="">
-      <meta name="author" content="">
-      <!-- bootstrap css -->
-      <link rel="stylesheet" href="{{ url_for('static', path='css/bootstrap.min.css')}}">
-      <!-- style css -->
-      <link rel="stylesheet" href="{{ url_for('static', path='css/banner.css') }} "  >
-      <link rel="stylesheet" href="{{ url_for('static', path='css/header.css') }} "  >
-      <link rel="stylesheet" href="{{ url_for('static', path='css/fashion.css') }} "  >
-      <link rel="stylesheet" href="{{ url_for('static', path='css/electronic.css') }} "  >
-      <link rel="stylesheet" href="{{ url_for('static', path='css/jewellery.css') }} "  >
-      <link rel="stylesheet" href="{{ url_for('static', path='css/footer.css') }} "  >
-      <link rel="stylesheet" href="{{ url_for('static', path='css/chat.css') }} " >
-      <link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }} " >
-      <!-- Responsive-->
-      <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css')}}">
-      <!-- fevicon -->
-      <link rel="icon" href="{{ url_for('static', path='images/fevicon.png') }}" type="image/gif" />
-      <!-- Scrollbar Custom CSS -->
-      <link rel="stylesheet" href="{{ url_for('static', path='css/jquery.mCustomScrollbar.min.css')}}">
-      <!-- Tweaks for older IEs-->
-      <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
-      <!-- fonts -->
-      <link href="https://fonts.googleapis.com/css?family=Poppins:400,700&display=swap" rel="stylesheet">
-      <!-- font awesome -->
-      <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-      <!--  -->
-      <!-- owl stylesheets -->
-      <link href="https://fonts.googleapis.com/css?family=Great+Vibes|Poppins:400,700&display=swap&subset=latin-ext" rel="stylesheet">
-      <link rel="stylesheet" href="{{ url_for('static', path='css/owl.carousel.min.css')}}">
-      <link rel="stylesoeet" href="{{ url_for('static', path='css/owl.theme.default.min.css')}}">
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" media="screen">
-   </head>
-   <body>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Digital Space Store</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="">
+  <meta name="author" content="">
 
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Noto+Sans+Arabic:wght@400;700&display=swap" rel="stylesheet">
 
-{% block content %}
-{% endblock %}
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/bootstrap.min.css') }}">
 
-      <!-- Javascript files-->
-      <script src="{{ url_for('static', path='js/jquery.min.js')}}"></script>
-      <script src="{{ url_for('static', path='js/popper.min.js')}}"></script>
-      <script src="{{ url_for('static', path='js/bootstrap.bundle.min.js')}}"></script>
-      <script  src="{{ url_for('static', path='js/jquery-3.0.0.min.js')}}"></script>
-      <script src="{{ url_for('static', path='js/plugin.js')}}"></script>
-      <!-- sidebar -->
-      <script src="{{ url_for('static', path='js/jquery.mCustomScrollbar.concat.min.js')}}"></script>
-      <script src="{{ url_for('static', path='js/custom.js')}}"></script>
-      <script>
-         function openNav() {
-           document.getElementById("mySidenav").style.width = "250px";
-         }
-         
-         function closeNav() {
-           document.getElementById("mySidenav").style.width = "0";
-         }
-      </script>
-   </body>
+  <!-- App CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/banner.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/header.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/fashion.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/electronic.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/jewellery.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/footer.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/chat.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/admin.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/responsive.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/theme.css') }}">
+
+  <!-- Other CSS -->
+  <link rel="icon" href="{{ url_for('static', path='images/fevicon.png') }}" type="image/gif">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/jquery.mCustomScrollbar.min.css') }}">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/owl.carousel.min.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" media="screen">
+
+  <!-- Apply saved theme & lang ASAP to avoid flash -->
+  <script>
+    (function() {
+      var theme = localStorage.getItem('dsTheme') || 'light';
+      var lang  = localStorage.getItem('dsLang')  || 'en';
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.setAttribute('lang', lang);
+      document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+    })();
+  </script>
+</head>
+<body>
+
+{% block content %}{% endblock %}
+
+<!-- Back to top button -->
+<button id="back-to-top" aria-label="Back to top">
+  <i class="fa fa-chevron-up"></i>
+</button>
+
+<!-- Sidebar overlay -->
+<div id="sidenav-overlay"></div>
+
+<!-- Admin password modal -->
+<div class="admin-modal-overlay" id="adminModal">
+  <div class="admin-modal-box">
+    <button class="admin-modal-close-x" id="adminModalCloseX" aria-label="Close">&times;</button>
+    <h3>🔐 <span data-en="Admin Access" data-ar="دخول الإدارة">Admin Access</span></h3>
+    <p data-en="Enter the admin password to continue." data-ar="أدخل كلمة مرور المدير للمتابعة.">Enter the admin password to continue.</p>
+    <form id="adminDemoLoginForm" action="/admin/demo-login" method="POST">
+      <input type="text" name="username" value="admin" autocomplete="username" style="display:none;">
+      <input type="password" class="admin-modal-input" id="adminPasswordInput"
+             data-en-placeholder="Password" data-ar-placeholder="كلمة المرور"
+             placeholder="Password" autocomplete="current-password">
+    </form>
+    <div class="admin-modal-error" id="adminModalError"
+         data-en="Incorrect password. Please try again."
+         data-ar="كلمة المرور غير صحيحة. حاول مرة أخرى.">
+      Incorrect password. Please try again.
+    </div>
+    <div class="admin-modal-actions">
+      <button class="admin-modal-submit" id="adminModalSubmit"
+              data-en="Enter" data-ar="دخول">Enter</button>
+      <button class="admin-modal-cancel" id="adminModalCancel"
+              data-en="Cancel" data-ar="إلغاء">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- JS -->
+<script src="{{ url_for('static', path='js/jquery.min.js') }}"></script>
+<script src="{{ url_for('static', path='js/popper.min.js') }}"></script>
+<script src="{{ url_for('static', path='js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', path='js/jquery-3.0.0.min.js') }}"></script>
+<script src="{{ url_for('static', path='js/plugin.js') }}"></script>
+<script src="{{ url_for('static', path='js/jquery.mCustomScrollbar.concat.min.js') }}"></script>
+<script src="{{ url_for('static', path='js/custom.js') }}"></script>
+
+<script>
+// ===== SIDEBAR OPEN / CLOSE =====
+function openNav() {
+  document.getElementById('mySidenav').style.width = '280px';
+  document.getElementById('sidenav-overlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeNav() {
+  document.getElementById('mySidenav').style.width = '0';
+  document.getElementById('sidenav-overlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('sidenav-overlay').addEventListener('click', closeNav);
+
+// ===== LANGUAGE SYSTEM =====
+var TRANSLATIONS = {
+  en: {
+    'nav-home': 'Home',
+    'nav-products': 'Products',
+    'nav-fashion': 'Fashion',
+    'nav-electronic': 'Electronics',
+    'nav-jewellery': 'Jewellery',
+    'nav-cart': 'Cart',
+    'nav-orders': 'My Orders',
+    'nav-chat': 'Chat',
+    'nav-profile': 'Profile',
+    'nav-admin': 'Admin Panel',
+    'sidebar-browse': 'Browse',
+    'sidebar-account': 'Account',
+    'sidebar-title': 'Digital Space',
+    'theme-dark': '🌙 Dark',
+    'theme-light': '☀️ Light',
+    'lang-switch': 'عربي',
+    'admin-modal-title': 'Admin Access',
+    'admin-modal-desc': 'Enter the admin password to continue.',
+    'admin-modal-enter': 'Enter',
+    'admin-modal-cancel': 'Cancel',
+    'admin-modal-error': 'Incorrect password. Please try again.',
+    'admin-modal-placeholder': 'Password',
+  },
+  ar: {
+    'nav-home': 'الرئيسية',
+    'nav-products': 'المنتجات',
+    'nav-fashion': 'الموضة',
+    'nav-electronic': 'الإلكترونيات',
+    'nav-jewellery': 'المجوهرات',
+    'nav-cart': 'السلة',
+    'nav-orders': 'طلباتي',
+    'nav-chat': 'الدردشة',
+    'nav-profile': 'حسابي',
+    'nav-admin': 'لوحة التحكم',
+    'sidebar-browse': 'تصفح',
+    'sidebar-account': 'الحساب',
+    'sidebar-title': 'ديجيتال سبيس',
+    'theme-dark': '🌙 داكن',
+    'theme-light': '☀️ فاتح',
+    'lang-switch': 'English',
+    'admin-modal-title': 'دخول الإدارة',
+    'admin-modal-desc': 'أدخل كلمة مرور المدير للمتابعة.',
+    'admin-modal-enter': 'دخول',
+    'admin-modal-cancel': 'إلغاء',
+    'admin-modal-error': 'كلمة المرور غير صحيحة. حاول مرة أخرى.',
+    'admin-modal-placeholder': 'كلمة المرور',
+  }
+};
+
+function getCurrentLang() {
+  return localStorage.getItem('dsLang') || 'en';
+}
+
+function applyLanguage(lang) {
+  var html = document.documentElement;
+  html.setAttribute('lang', lang);
+  html.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  localStorage.setItem('dsLang', lang);
+
+  var t = TRANSLATIONS[lang] || TRANSLATIONS['en'];
+
+  // Update all data-key elements
+  document.querySelectorAll('[data-trans]').forEach(function(el) {
+    var key = el.getAttribute('data-trans');
+    if (t[key]) el.textContent = t[key];
+  });
+
+  // Update all data-en / data-ar elements
+  var attr = lang === 'ar' ? 'data-ar' : 'data-en';
+  document.querySelectorAll('[data-en],[data-ar]').forEach(function(el) {
+    var val = el.getAttribute(attr);
+    if (val !== null) el.textContent = val;
+  });
+
+  // Update placeholders
+  var phAttr = lang === 'ar' ? 'data-ar-placeholder' : 'data-en-placeholder';
+  document.querySelectorAll('[data-en-placeholder],[data-ar-placeholder]').forEach(function(el) {
+    var val = el.getAttribute(phAttr);
+    if (val !== null) el.placeholder = val;
+  });
+
+  // Update lang switcher buttons
+  document.querySelectorAll('.sidebar-lang-btn, .header-lang-btn').forEach(function(btn) {
+    btn.textContent = lang === 'ar' ? 'English' : 'عربي';
+  });
+
+  // Update theme button text
+  var currentTheme = localStorage.getItem('dsTheme') || 'light';
+  document.querySelectorAll('.sidebar-theme-btn').forEach(function(btn) {
+    btn.innerHTML = currentTheme === 'dark'
+      ? (lang === 'ar' ? '☀️ فاتح' : '☀️ Light')
+      : (lang === 'ar' ? '🌙 داكن' : '🌙 Dark');
+  });
+}
+
+function toggleLanguage() {
+  var lang = getCurrentLang() === 'ar' ? 'en' : 'ar';
+  applyLanguage(lang);
+}
+
+// ===== THEME SYSTEM =====
+function getCurrentTheme() {
+  return localStorage.getItem('dsTheme') || 'light';
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('dsTheme', theme);
+  var lang = getCurrentLang();
+  document.querySelectorAll('.sidebar-theme-btn').forEach(function(btn) {
+    if (theme === 'dark') {
+      btn.innerHTML = lang === 'ar' ? '☀️ فاتح' : '☀️ Light';
+    } else {
+      btn.innerHTML = lang === 'ar' ? '🌙 داكن' : '🌙 Dark';
+    }
+  });
+  document.querySelectorAll('.header-theme-btn').forEach(function(btn) {
+    btn.innerHTML = theme === 'dark' ? '☀️' : '🌙';
+  });
+}
+
+function toggleTheme() {
+  var newTheme = getCurrentTheme() === 'dark' ? 'light' : 'dark';
+  applyTheme(newTheme);
+}
+
+// ===== ADMIN MODAL =====
+var ADMIN_PASSWORD = 'admin2024';
+
+function openAdminModal() {
+  closeNav();
+  var modal = document.getElementById('adminModal');
+  modal.classList.add('active');
+  setTimeout(function() {
+    var input = document.getElementById('adminPasswordInput');
+    if (input) input.focus();
+  }, 100);
+}
+
+function closeAdminModal() {
+  document.getElementById('adminModal').classList.remove('active');
+  document.getElementById('adminPasswordInput').value = '';
+  var err = document.getElementById('adminModalError');
+  err.classList.remove('visible');
+  document.getElementById('adminPasswordInput').classList.remove('error');
+}
+
+function submitAdminPassword() {
+  var input = document.getElementById('adminPasswordInput');
+  var err = document.getElementById('adminModalError');
+  var val = input.value.trim();
+
+  if (val === ADMIN_PASSWORD) {
+    closeAdminModal();
+    // Create and submit a clean form to bypass event prevention
+    var f = document.createElement('form');
+    f.method = 'POST';
+    f.action = '/admin/demo-login';
+    document.body.appendChild(f);
+    f.submit();
+  } else {
+    input.classList.add('error');
+    err.classList.add('visible');
+    // Update error text based on language
+    var lang = getCurrentLang();
+    err.textContent = TRANSLATIONS[lang]['admin-modal-error'];
+    setTimeout(function() { input.classList.remove('error'); }, 400);
+    input.value = '';
+    input.focus();
+  }
+}
+
+document.getElementById('adminModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAdminModal();
+});
+document.getElementById('adminModalCancel').addEventListener('click', closeAdminModal);
+document.getElementById('adminModalCloseX').addEventListener('click', closeAdminModal);
+document.getElementById('adminModalSubmit').addEventListener('click', submitAdminPassword);
+document.getElementById('adminPasswordInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); submitAdminPassword(); }
+  if (e.key === 'Escape') closeAdminModal();
+});
+document.getElementById('adminDemoLoginForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  submitAdminPassword();
+});
+
+// ===== SIDEBAR SUBMENU TOGGLE =====
+document.querySelectorAll('.sidenav-toggle-item').forEach(function(item) {
+  item.addEventListener('click', function() {
+    var targetId = this.getAttribute('data-target');
+    var submenu = document.getElementById(targetId);
+    var isOpen = submenu.classList.contains('open');
+    // Close all submenus
+    document.querySelectorAll('.sidenav-submenu').forEach(function(sm) { sm.classList.remove('open'); });
+    document.querySelectorAll('.sidenav-toggle-item').forEach(function(ti) { ti.classList.remove('open'); });
+    if (!isOpen) {
+      submenu.classList.add('open');
+      this.classList.add('open');
+    }
+  });
+});
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', function() {
+  var lang = getCurrentLang();
+  var theme = getCurrentTheme();
+  applyLanguage(lang);
+  applyTheme(theme);
+});
+</script>
+
+</body>
 </html>
-

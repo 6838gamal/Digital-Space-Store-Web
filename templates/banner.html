@@ -1,133 +1,245 @@
- <div class="banner_bg_main">
-         <!-- header top section start -->
-         <div class="container">
-            <div class="header_section_top">
-               <div class="row">
-                  <div class="col-sm-12">
-                     <div class="custom_menu">
-                        <ul>
-                           <li><a href="#">Best Sellers</a></li>
-                           <li><a href="#">Gift Ideas</a></li>
-                           <li><a href="#">New Releases</a></li>
-                           <li><a href="#">Today's Deals</a></li>
-                           <li><a href="#">Customer Service</a></li>
-                        </ul>
-                     </div>
-                  </div>
-               </div>
-            </div>
-         </div>
-         <!-- header top section start -->
-         <!-- logo section start -->
-         <div class="logo_section">
-            <div class="container">
-               <div class="row">
-                  <div class="col-sm-12">
-                     <div class="logo"><a href="index.html"><img src="images/logo.png"></a></div>
-                  </div>
-               </div>
-            </div>
-         </div>
-         <!-- logo section end -->
-         <!-- header section start -->
-         <div class="header_section">
-            <div class="container">
-               <div class="containt_main">
-                  <div id="mySidenav" class="sidenav">
-                     <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-                     <a href="index.html">Home</a>
-                     <a href="fashion.html">Fashion</a>
-                     <a href="electronic.html">Electronic</a>
-                     <a href="jewellery.html">Jewellery</a>
-                  </div>
-                  <span class="toggle_icon" onclick="openNav()"><img src="images/toggle-icon.png"></span>
-                  <div class="dropdown">
-                     <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">All Category 
-                     </button>
-                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <a class="dropdown-item" href="#">Action</a>
-                        <a class="dropdown-item" href="#">Another action</a>
-                        <a class="dropdown-item" href="#">Something else here</a>
-                     </div>
-                  </div>
-                  <div class="main">
-                     <!-- Another variation with a button -->
-                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Search this blog">
-                        <div class="input-group-append">
-                           <button class="btn btn-secondary" type="button" style="background-color: #f26522; border-color:#f26522 ">
-                           <i class="fa fa-search"></i>
-                           </button>
-                        </div>
-                     </div>
-                  </div>
-                  <div class="header_box">
-                     <div class="lang_box ">
-                        <a href="#" title="Language" class="nav-link" data-toggle="dropdown" aria-expanded="true">
-                        <img src="images/flag-uk.png" alt="flag" class="mr-2 " title="United Kingdom"> English <i class="fa fa-angle-down ml-2" aria-hidden="true"></i>
-                        </a>
-                        <div class="dropdown-menu ">
-                           <a href="#" class="dropdown-item">
-                           <img src="images/flag-france.png" class="mr-2" alt="flag">
-                           French
-                           </a>
-                        </div>
-                     </div>
-                     <div class="login_menu">
-                        <ul>
-                           <li><a href="#">
-                              <i class="fa fa-shopping-cart" aria-hidden="true"></i>
-                              <span class="padding_10">Cart</span></a>
-                           </li>
-                           <li><a href="#">
-                              <i class="fa fa-user" aria-hidden="true"></i>
-                              <span class="padding_10">Cart</span></a>
-                           </li>
-                        </ul>
-                     </div>
-                  </div>
-               </div>
-            </div>
-         </div>
-         <!-- header section end -->
-         <!-- banner section start -->
-         <div class="banner_section layout_padding">
-            <div class="container">
-               <div id="my_slider" class="carousel slide" data-ride="carousel">
-                  <div class="carousel-inner">
-                     <div class="carousel-item active">
-                        <div class="row">
-                           <div class="col-sm-12">
-                              <h1 class="banner_taital">Get Start <br>Your favriot shoping</h1>
-                              <div class="buynow_bt"><a href="#">Buy Now</a></div>
-                           </div>
-                        </div>
-                     </div>
-                     <div class="carousel-item">
-                        <div class="row">
-                           <div class="col-sm-12">
-                              <h1 class="banner_taital">Get Start <br>Your favriot shoping</h1>
-                              <div class="buynow_bt"><a href="#">Buy Now</a></div>
-                           </div>
-                        </div>
-                     </div>
-                     <div class="carousel-item">
-                        <div class="row">
-                           <div class="col-sm-12">
-                              <h1 class="banner_taital">Get Start <br>Your favriot shoping</h1>
-                              <div class="buynow_bt"><a href="#">Buy Now</a></div>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-                  <a class="carousel-control-prev" href="#my_slider" role="button" data-slide="prev">
-                  <i class="fa fa-angle-left"></i>
-                  </a>
-                  <a class="carousel-control-next" href="#my_slider" role="button" data-slide="next">
-                  <i class="fa fa-angle-right"></i>
-                  </a>
-               </div>
-            </div>
-         </div>
-         <!-- banner section end -->
+<div class="banner_bg_main">
+
+  <!-- ===== SIDEBAR ===== -->
+  <div id="mySidenav" class="sidenav">
+
+    <!-- Header -->
+    <div class="sidenav-header">
+      <span class="sidenav-logo" data-trans="sidebar-title">Digital Space</span>
+      <div class="sidenav-controls">
+        <button class="sidebar-lang-btn" onclick="toggleLanguage()">عربي</button>
+        <button class="sidebar-theme-btn" onclick="toggleTheme()">🌙 Dark</button>
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
       </div>
+    </div>
+
+    <!-- Nav Body -->
+    <div class="sidenav-body">
+
+      <div class="sidenav-section-label" data-trans="sidebar-browse">Browse</div>
+
+      <a href="/" class="nav-link-item">
+        <span class="nav-icon">🏠</span>
+        <span data-trans="nav-home">Home</span>
+      </a>
+
+      <!-- Products with sub-categories -->
+      <div class="sidenav-toggle-item" data-target="submenu-products">
+        <span class="nav-icon">🛍️</span>
+        <span data-trans="nav-products">Products</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="sidenav-submenu" id="submenu-products">
+        <a href="/?tab=fashion" class="nav-link-item">
+          <span class="nav-icon">👗</span>
+          <span data-trans="nav-fashion">Fashion</span>
+        </a>
+        <a href="/?tab=electronic" class="nav-link-item">
+          <span class="nav-icon">💻</span>
+          <span data-trans="nav-electronic">Electronics</span>
+        </a>
+        <a href="/?tab=jewellery" class="nav-link-item">
+          <span class="nav-icon">💍</span>
+          <span data-trans="nav-jewellery">Jewellery</span>
+        </a>
+      </div>
+
+      <a href="/cart" class="nav-link-item">
+        <span class="nav-icon">🛒</span>
+        <span data-trans="nav-cart">Cart</span>
+      </a>
+
+      <a href="/orders" class="nav-link-item">
+        <span class="nav-icon">📦</span>
+        <span data-trans="nav-orders">My Orders</span>
+      </a>
+
+      <a href="/chat" class="nav-link-item">
+        <span class="nav-icon">🤖</span>
+        <span data-trans="nav-chat">Chat</span>
+      </a>
+
+      <div class="sidenav-divider"></div>
+      <div class="sidenav-section-label" data-trans="sidebar-account">Account</div>
+
+      <a href="/profile" class="nav-link-item">
+        <span class="nav-icon">👤</span>
+        <span data-trans="nav-profile">Profile</span>
+      </a>
+
+    </div>
+
+    <!-- Footer: Admin Button -->
+    <div class="sidenav-footer">
+      <button class="admin-sidebar-btn" onclick="openAdminModal()">
+        <span class="nav-icon">⚙️</span>
+        <span data-trans="nav-admin">Admin Panel</span>
+      </button>
+    </div>
+
+  </div>
+  <!-- ===== /SIDEBAR ===== -->
+
+  <!-- Header Top -->
+  <div class="container">
+    <div class="header_section_top">
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="custom_menu">
+            <ul>
+              <li><a href="/?tab=best" data-en="Best Sellers" data-ar="الأكثر مبيعاً">Best Sellers</a></li>
+              <li><a href="/?tab=gifts" data-en="Gift Ideas" data-ar="هدايا">Gift Ideas</a></li>
+              <li><a href="/?tab=new" data-en="New Releases" data-ar="وصل حديثاً">New Releases</a></li>
+              <li><a href="/?tab=deals" data-en="Today's Deals" data-ar="عروض اليوم">Today's Deals</a></li>
+              <li><a href="/?tab=support" data-en="Customer Service" data-ar="خدمة العملاء">Customer Service</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logo -->
+  <div class="logo_section">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="logo">
+            <a href="/"><img src="{{ url_for('static', path='images/logo.png') }}" alt="Logo"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header Section -->
+  <div class="header_section">
+    <div class="container">
+      <div class="containt_main">
+
+        <!-- Sidebar toggle -->
+        <span class="toggle_icon" onclick="openNav()">
+          <img src="{{ url_for('static', path='images/toggle-icon.png') }}" alt="menu">
+        </span>
+
+        <!-- Category dropdown -->
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                  data-en="All Category" data-ar="كل الفئات">
+            All Category
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item" href="/?tab=fashion" data-en="Fashion" data-ar="الموضة">Fashion</a>
+            <a class="dropdown-item" href="/?tab=electronic" data-en="Electronics" data-ar="الإلكترونيات">Electronics</a>
+            <a class="dropdown-item" href="/?tab=jewellery" data-en="Jewellery" data-ar="المجوهرات">Jewellery</a>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div class="main">
+          <div class="input-group">
+            <input type="text" class="form-control"
+                   data-en-placeholder="Search products..." data-ar-placeholder="ابحث عن منتج..."
+                   placeholder="Search products...">
+            <div class="input-group-append">
+              <button class="btn btn-secondary" type="button" style="background-color:#f26522;border-color:#f26522;">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Header right: lang + theme + cart/user -->
+        <div class="header_box">
+
+          <!-- Language toggle -->
+          <div class="lang_box">
+            <button class="lang_btn header-lang-btn" onclick="toggleLanguage()">عربي</button>
+          </div>
+
+          <!-- Theme toggle -->
+          <button class="theme-toggle-header header-theme-btn" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
+
+          <!-- Cart & User -->
+          <div class="login_menu">
+            <ul>
+              <li>
+                <a href="/cart">
+                  <i class="fa fa-shopping-cart" aria-hidden="true"></i>
+                  <span class="padding_10" data-en="Cart" data-ar="السلة">Cart</span>
+                </a>
+              </li>
+              <li>
+                <a href="/profile">
+                  <i class="fa fa-user" aria-hidden="true"></i>
+                  <span class="padding_10" data-en="Account" data-ar="حسابي">Account</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Banner / Hero -->
+  <div class="banner_section layout_padding">
+    <div class="container">
+      <div id="my_slider" class="carousel slide" data-ride="carousel">
+        <div class="carousel-inner">
+          <div class="carousel-item active">
+            <div class="row">
+              <div class="col-sm-12">
+                <h1 class="banner_taital"
+                    data-en="Start Your Favourite Shopping"
+                    data-ar="ابدأ تسوقك المفضل">
+                  Start Your Favourite Shopping
+                </h1>
+                <div class="buynow_bt">
+                  <a href="/?tab=fashion" data-en="Shop Now" data-ar="تسوق الآن">Shop Now</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="carousel-item">
+            <div class="row">
+              <div class="col-sm-12">
+                <h1 class="banner_taital"
+                    data-en="Discover New Arrivals"
+                    data-ar="اكتشف الوصول الجديد">
+                  Discover New Arrivals
+                </h1>
+                <div class="buynow_bt">
+                  <a href="/?tab=electronic" data-en="Explore" data-ar="استكشف">Explore</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="carousel-item">
+            <div class="row">
+              <div class="col-sm-12">
+                <h1 class="banner_taital"
+                    data-en="Best Deals Every Day"
+                    data-ar="أفضل العروض كل يوم">
+                  Best Deals Every Day
+                </h1>
+                <div class="buynow_bt">
+                  <a href="/?tab=jewellery" data-en="View Deals" data-ar="اعرض العروض">View Deals</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <a class="carousel-control-prev" href="#my_slider" role="button" data-slide="prev">
+          <i class="fa fa-angle-left"></i>
+        </a>
+        <a class="carousel-control-next" href="#my_slider" role="button" data-slide="next">
+          <i class="fa fa-angle-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
