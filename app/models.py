@@ -21,3 +21,12 @@ class Order(Base):
     customer_phone = Column(String(20)) # مهم جداً للربط مع Vonage لاحقاً
     total_amount = Column(Float)
     status = Column(String(50), default="Pending") # Pending, Completed, Cancelled
+
+class KnowledgeItem(Base):
+    __tablename__ = "knowledge_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    content = Column(Text, nullable=False)
+    tags = Column(String(500), default="")
+    is_active = Column(Boolean, default=True)

@@ -1,50 +1,115 @@
-<!-- Chat Container -->
-<div class="chat-container">
-
-  <!-- Header -->
-  <div class="chat-header">
-    <div class="chat-title">🤖 AI Assistant</div>
-    <div class="chat-status">● Online</div>
-  </div>
-
-  <!-- Messages -->
-  <div class="chat-messages" id="chatMessages">
-
-    <div class="message bot">
-      مرحباً 👋 كيف أستطيع مساعدتك اليوم؟
+{% extends "base.html" %}
+{% block content %}
+<main class="chat-page" dir="rtl">
+  <section class="chat-shell">
+    <div class="chat-header">
+      <div>
+        <div class="chat-title">وكيل التسوق الذكي</div>
+        <p>اسأل عن المنتجات أو اطلب مني فتح السلة والدفع والطلبات والحساب.</p>
+      </div>
+      <a class="chat-home-link" href="/">العودة للمتجر</a>
     </div>
 
-  </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="message bot">
+        مرحباً، أنا وكيل التسوق. أستطيع اقتراح المنتجات وتوجيهك داخل المتجر عبر الدردشة. ماذا تبحث عنه اليوم؟
+      </div>
+    </div>
 
-  <!-- Input -->
-  <div class="chat-input">
-    <input type="text" id="userInput" placeholder="اكتب رسالتك..." />
-    <button onclick="sendMessage()">➤</button>
-  </div>
+    <div class="quick-prompts" id="quickPrompts">
+      <button type="button" data-prompt="اقترح لي أفضل منتج متاح">اقترح منتج</button>
+      <button type="button" data-prompt="افتح السلة">السلة</button>
+      <button type="button" data-prompt="كيف أكمل الطلب؟">الدفع</button>
+      <button type="button" data-prompt="ماذا تستطيع أن تفعل؟">مزايا الوكيل</button>
+    </div>
 
-</div>
+    <form class="chat-input" id="chatForm">
+      <input type="text" id="userInput" placeholder="اكتب طلبك هنا..." autocomplete="off" />
+      <button type="submit">إرسال</button>
+    </form>
+  </section>
+</main>
 
-<!-- Script -->
 <script>
-  function sendMessage() {
-    const input = document.getElementById("userInput");
-    const messages = document.getElementById("chatMessages");
+  const chatHistory = [];
+  const form = document.getElementById("chatForm");
+  const input = document.getElementById("userInput");
+  const messages = document.getElementById("chatMessages");
+  const quickPrompts = document.getElementById("quickPrompts");
 
-    if (input.value.trim() === "") return;
+  function appendMessage(role, text, actions = []) {
+    const wrapper = document.createElement("div");
+    wrapper.className = `message ${role}`;
+    wrapper.innerText = text;
+    messages.appendChild(wrapper);
 
-    // رسالة المستخدم
-    const userMsg = document.createElement("div");
-    userMsg.className = "message user";
-    userMsg.innerText = input.value;
-    messages.appendChild(userMsg);
-
-    // رد وهمي (مؤقت)
-    const botMsg = document.createElement("div");
-    botMsg.className = "message bot";
-    botMsg.innerText = "جاري التفكير...";
-    messages.appendChild(botMsg);
+    if (actions.length) {
+      const actionList = document.createElement("div");
+      actionList.className = "message-actions";
+      actions.forEach((item) => {
+        const link = document.createElement("a");
+        link.href = item.url;
+        link.innerText = item.label;
+        actionList.appendChild(link);
+      });
+      messages.appendChild(actionList);
+    }
 
     messages.scrollTop = messages.scrollHeight;
-    input.value = "";
   }
+
+  function appendTyping() {
+    const typing = document.createElement("div");
+    typing.className = "message bot typing";
+    typing.id = "typingMessage";
+    typing.innerText = "الوكيل يبحث في معرفة المتجر...";
+    messages.appendChild(typing);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function removeTyping() {
+    const typing = document.getElementById("typingMessage");
+    if (typing) typing.remove();
+  }
+
+  async function sendMessage(text) {
+    const message = text.trim();
+    if (!message) return;
+
+    appendMessage("user", message);
+    chatHistory.push({ role: "user", content: message });
+    input.value = "";
+    appendTyping();
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, history: chatHistory.slice(-8) }),
+      });
+
+      if (!response.ok) {
+        throw new Error("تعذر الاتصال بالوكيل");
+      }
+
+      const data = await response.json();
+      removeTyping();
+      appendMessage("bot", data.reply, data.actions || []);
+      chatHistory.push({ role: "assistant", content: data.reply });
+    } catch (error) {
+      removeTyping();
+      appendMessage("bot", "حدث خطأ أثناء معالجة الطلب. حاول مرة أخرى بعد قليل.");
+    }
+  }
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    sendMessage(input.value);
+  });
+
+  quickPrompts.addEventListener("click", (event) => {
+    const prompt = event.target.dataset.prompt;
+    if (prompt) sendMessage(prompt);
+  });
 </script>
+{% endblock %}

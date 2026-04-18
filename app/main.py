@@ -3,10 +3,12 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal, engine
 from app import models
+from app.chat_agent import build_agent_response, ensure_default_knowledge
 
 app = FastAPI(title="Gamal Store Backend")
 
@@ -66,6 +68,7 @@ def on_startup():
             db.add_all(sample_products)
             db.commit()
 
+        ensure_default_knowledge(db)
         db.close()
         print("✅ Database ready")
 
@@ -75,6 +78,19 @@ def on_startup():
 # ---------------------------
 # Routes
 # ---------------------------
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=1000)
+    history: list[ChatMessage] = []
+
+class KnowledgeCreate(BaseModel):
+    title: str = Field(..., min_length=2, max_length=255)
+    content: str = Field(..., min_length=5)
+    tags: str = ""
 
 @app.get("/", name="home")
 def home(request: Request, tab: str = "home", db: Session = Depends(get_db)):
@@ -172,6 +188,52 @@ def chat(request: Request):
         name="chat.html",
         context={}
     )
+
+@app.post("/api/chat")
+def chat_api(payload: ChatRequest, db: Session = Depends(get_db)):
+    return build_agent_response(payload.message, db)
+
+@app.get("/api/chat/capabilities")
+def chat_capabilities():
+    return {
+        "capabilities": [
+            "استرجاع معلومات المنتجات من قاعدة البيانات",
+            "استرجاع معرفة المتجر القابلة للإضافة لاحقاً",
+            "اقتراح منتجات وروابط تنقل داخلية",
+            "توجيه المستخدم إلى السلة والدفع والطلبات والحساب",
+        ],
+        "rag_ready": True,
+    }
+
+@app.get("/api/knowledge")
+def list_knowledge(db: Session = Depends(get_db)):
+    items = db.query(models.KnowledgeItem).filter(models.KnowledgeItem.is_active == True).all()
+    return [
+        {
+            "id": item.id,
+            "title": item.title,
+            "content": item.content,
+            "tags": item.tags,
+        }
+        for item in items
+    ]
+
+@app.post("/api/knowledge")
+def add_knowledge(payload: KnowledgeCreate, db: Session = Depends(get_db)):
+    item = models.KnowledgeItem(
+        title=payload.title,
+        content=payload.content,
+        tags=payload.tags,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {
+        "id": item.id,
+        "title": item.title,
+        "content": item.content,
+        "tags": item.tags,
+    }
 
 
 # ---------------------------
