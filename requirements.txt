@@ -3,3 +3,9 @@ uvicorn
 SQLAlchemy
 python-dotenv
 jinja2
+fastapi
+jinja2
+python-dotenv
+SQLAlchemy
+uvicorn
+psycopg2-binary

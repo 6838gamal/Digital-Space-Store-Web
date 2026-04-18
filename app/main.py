@@ -1,5 +1,6 @@
 import os
 from fastapi import FastAPI, Request, Depends
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -14,6 +15,8 @@ app = FastAPI(title="Gamal Store Backend")
 # ---------------------------
 if os.path.isdir("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
+if os.path.isdir("static/images"):
+    app.mount("/images", StaticFiles(directory="static/images"), name="images")
 
 # ---------------------------
 # Templates
@@ -93,6 +96,14 @@ def view_cart(request: Request):
         context={}
     )
 
+@app.get("/orders", name="orders")
+def orders(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="orders.html",
+        context={}
+    )
+
 @app.get("/checkout", name="checkout")
 def checkout(request: Request):
     return templates.TemplateResponse(
@@ -133,6 +144,26 @@ def add_product(request: Request):
         name="add-product.html",
         context={}
     )
+
+@app.get("/logout", name="logout")
+def logout():
+    return RedirectResponse(url="/", status_code=302)
+
+@app.get("/index.html")
+def legacy_index():
+    return RedirectResponse(url="/", status_code=302)
+
+@app.get("/fashion.html")
+def legacy_fashion():
+    return RedirectResponse(url="/?tab=fashion", status_code=302)
+
+@app.get("/electronic.html")
+def legacy_electronic():
+    return RedirectResponse(url="/?tab=electronic", status_code=302)
+
+@app.get("/jewellery.html")
+def legacy_jewellery():
+    return RedirectResponse(url="/?tab=jewellery", status_code=302)
 
 @app.get("/chat", name="chat")
 def chat(request: Request):
