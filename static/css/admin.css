@@ -1,0 +1,169 @@
+.admin-page,
+.admin-login-page {
+  min-height: 100vh;
+  background: #0f172a;
+  color: #e5e7eb;
+  direction: rtl;
+}
+
+.admin-page {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+}
+
+.admin-sidebar {
+  background: #020617;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  min-height: 100vh;
+}
+
+.admin-sidebar a,
+.admin-sidebar button,
+.google-login,
+.demo-login,
+.admin-back,
+.admin-card button {
+  border: 0;
+  border-radius: 12px;
+  background: #2563eb;
+  color: #fff;
+  padding: 11px 14px;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+}
+
+.admin-sidebar button,
+.danger {
+  background: #dc2626 !important;
+}
+
+.admin-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.admin-card,
+.admin-login-card {
+  background: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+}
+
+.admin-grid-form,
+.admin-edit-form,
+.upload-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-grid-form textarea,
+.admin-edit-form textarea {
+  grid-column: 1 / -1;
+  min-height: 90px;
+}
+
+.admin-card input,
+.admin-card textarea,
+.admin-login-card input {
+  width: 100%;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: #020617;
+  color: #fff;
+  padding: 11px 12px;
+}
+
+.admin-list {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-row {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 16px;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.admin-table {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.admin-table > div {
+  background: #020617;
+  padding: 12px;
+}
+
+.admin-login-page {
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.admin-login-card {
+  width: min(460px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.google-login {
+  background: #f8fafc;
+  color: #111827;
+}
+
+.demo-login {
+  width: 100%;
+  background: #f26522;
+}
+
+.admin-back {
+  background: transparent;
+  border: 1px solid #475569;
+}
+
+.admin-alert,
+.admin-note {
+  background: rgba(242, 101, 34, 0.12);
+  border: 1px solid rgba(242, 101, 34, 0.3);
+  color: #fed7aa;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+@media (max-width: 800px) {
+  .admin-page {
+    display: block;
+  }
+
+  .admin-sidebar {
+    min-height: auto;
+    position: static;
+  }
+
+  .admin-grid-form,
+  .admin-edit-form,
+  .upload-form,
+  .admin-table {
+    grid-template-columns: 1fr;
+  }
+}

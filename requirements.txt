@@ -9,3 +9,5 @@ python-dotenv
 SQLAlchemy
 uvicorn
 psycopg2-binary
+itsdangerous
+python-multipart

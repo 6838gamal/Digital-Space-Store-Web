@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="admin-login-page" dir="rtl">
+  <section class="admin-login-card">
+    <h1>إدارة المتجر</h1>
+    <p>سجّل الدخول لإدارة المنتجات والمشاركين وبيانات تدريب الوكيل.</p>
+    {% if message %}
+    <div class="admin-alert">{{ message }}</div>
+    {% endif %}
+    <a class="google-login" href="/admin/auth/google">التسجيل عبر Google</a>
+    {% if not google_ready %}
+    <p class="admin-note">تسجيل Google يحتاج تفعيل بيانات OAuth في إعدادات البيئة.</p>
+    {% endif %}
+    {% if allow_demo %}
+    <form method="post" action="/admin/demo-login">
+      <button type="submit" class="demo-login">دخول مدير تجريبي للتطوير</button>
+    </form>
+    {% endif %}
+    <a href="/" class="admin-back">العودة للمتجر</a>
+  </section>
+</main>
+{% endblock %}

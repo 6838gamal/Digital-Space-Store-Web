@@ -16,6 +16,9 @@ Digital Space Store is a Python FastAPI web application using server-rendered Ji
 - `/chat` is the shopping assistant screen opened by the floating button.
 - `/api/chat` accepts chat messages and returns an Arabic assistant reply, relevant retrieval matches, suggestions, and navigation actions.
 - `/api/knowledge` can list or add active store knowledge snippets for retrieval. This makes the assistant RAG-ready: product data and knowledge snippets are already separated from the response layer so embeddings/LLM generation can be added later.
+- Chat conversations are persisted in `ChatConversation` and `ChatMessageRecord` and shown in a sidebar on `/chat`.
+- `/admin` is an independent management panel for products, store participants, admin users, and RAG training data.
+- Google sign-in is wired through `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` when configured; development mode also includes a local demo admin login for previewing the panel.
 
 # Replit Setup
 

@@ -1,6 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 <main class="chat-page" dir="rtl">
+  <aside class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <strong>المحادثات</strong>
+      <button type="button" id="newConversation">+ جديدة</button>
+    </div>
+    <div class="conversation-list" id="conversationList"></div>
+    <a class="admin-shortcut" href="/admin">إدارة المتجر</a>
+  </aside>
+
   <section class="chat-shell">
     <div class="chat-header">
       <div>
@@ -32,10 +41,13 @@
 
 <script>
   const chatHistory = [];
+  let currentConversationId = null;
   const form = document.getElementById("chatForm");
   const input = document.getElementById("userInput");
   const messages = document.getElementById("chatMessages");
   const quickPrompts = document.getElementById("quickPrompts");
+  const conversationList = document.getElementById("conversationList");
+  const newConversation = document.getElementById("newConversation");
 
   function appendMessage(role, text, actions = []) {
     const wrapper = document.createElement("div");
@@ -56,6 +68,49 @@
     }
 
     messages.scrollTop = messages.scrollHeight;
+  }
+
+  function resetMessages() {
+    chatHistory.length = 0;
+    messages.innerHTML = "";
+    appendMessage("bot", "مرحباً، أنا وكيل التسوق. أستطيع اقتراح المنتجات وتوجيهك داخل المتجر عبر الدردشة. ماذا تبحث عنه اليوم؟");
+  }
+
+  async function loadConversations() {
+    const response = await fetch("/api/chat/conversations");
+    const conversations = await response.json();
+    conversationList.innerHTML = "";
+    if (!conversations.length) {
+      const empty = document.createElement("div");
+      empty.className = "conversation-empty";
+      empty.innerText = "لا توجد محادثات بعد";
+      conversationList.appendChild(empty);
+      return;
+    }
+    conversations.forEach((conversation) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = conversation.id === currentConversationId ? "active" : "";
+      button.innerText = conversation.title || "محادثة";
+      button.addEventListener("click", () => openConversation(conversation.id));
+      conversationList.appendChild(button);
+    });
+  }
+
+  async function openConversation(conversationId) {
+    const response = await fetch(`/api/chat/conversations/${conversationId}`);
+    const data = await response.json();
+    currentConversationId = data.id;
+    chatHistory.length = 0;
+    messages.innerHTML = "";
+    if (!data.messages.length) {
+      appendMessage("bot", "محادثة جديدة. كيف أساعدك في التسوق؟");
+    }
+    data.messages.forEach((message) => {
+      appendMessage(message.role === "assistant" ? "bot" : "user", message.content);
+      chatHistory.push({ role: message.role, content: message.content });
+    });
+    await loadConversations();
   }
 
   function appendTyping() {
@@ -85,7 +140,7 @@
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history: chatHistory.slice(-8) }),
+        body: JSON.stringify({ message, history: chatHistory.slice(-8), conversation_id: currentConversationId }),
       });
 
       if (!response.ok) {
@@ -93,9 +148,11 @@
       }
 
       const data = await response.json();
+      currentConversationId = data.conversation_id;
       removeTyping();
       appendMessage("bot", data.reply, data.actions || []);
       chatHistory.push({ role: "assistant", content: data.reply });
+      await loadConversations();
     } catch (error) {
       removeTyping();
       appendMessage("bot", "حدث خطأ أثناء معالجة الطلب. حاول مرة أخرى بعد قليل.");
@@ -111,5 +168,15 @@
     const prompt = event.target.dataset.prompt;
     if (prompt) sendMessage(prompt);
   });
+
+  newConversation.addEventListener("click", async () => {
+    const response = await fetch("/api/chat/conversations", { method: "POST" });
+    const data = await response.json();
+    currentConversationId = data.id;
+    resetMessages();
+    await loadConversations();
+  });
+
+  loadConversations();
 </script>
 {% endblock %}
