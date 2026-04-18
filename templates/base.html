@@ -95,18 +95,27 @@
 <script>
 // ===== SIDEBAR OPEN / CLOSE =====
 function openNav() {
-  document.getElementById('mySidenav').style.width = '280px';
-  document.getElementById('sidenav-overlay').classList.add('active');
+  var drawer  = document.getElementById('mySidenav');
+  var overlay = document.getElementById('sidenav-overlay');
+  if (drawer)  drawer.classList.add('open');
+  if (overlay) overlay.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
 
 function closeNav() {
-  document.getElementById('mySidenav').style.width = '0';
-  document.getElementById('sidenav-overlay').classList.remove('active');
+  var drawer  = document.getElementById('mySidenav');
+  var overlay = document.getElementById('sidenav-overlay');
+  if (drawer)  drawer.classList.remove('open');
+  if (overlay) overlay.classList.remove('active');
   document.body.style.overflow = '';
 }
 
-document.getElementById('sidenav-overlay').addEventListener('click', closeNav);
+var overlayEl = document.getElementById('sidenav-overlay');
+if (overlayEl) overlayEl.addEventListener('click', closeNav);
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeNav();
+});
 
 // ===== LANGUAGE SYSTEM =====
 var TRANSLATIONS = {
