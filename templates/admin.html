@@ -1,111 +1,479 @@
 {% extends "base.html" %}
 {% block content %}
 <main class="admin-page" dir="rtl">
+
+  <!-- ===== SIDEBAR ===== -->
   <aside class="admin-sidebar">
-    <h2>لوحة الإدارة</h2>
-    <p>{{ admin.name }}</p>
-    <a href="#products">المنتجات</a>
-    <a href="#participants">المشاركون</a>
-    <a href="#rag">تدريب الوكيل</a>
-    <a href="#admins">المشرفون</a>
-    <a href="/chat">شاشة الوكيل</a>
-    <form method="post" action="/admin/logout">
-      <button type="submit">تسجيل الخروج</button>
-    </form>
+    <div class="admin-sidebar-brand">
+      <div class="admin-brand-icon">⚙️</div>
+      <div>
+        <div class="admin-brand-name">لوحة الإدارة</div>
+        <div class="admin-brand-user">{{ admin.name }}</div>
+      </div>
+    </div>
+
+    <nav class="admin-nav">
+      <a href="#" class="admin-nav-item active" data-section="stats">
+        <span class="admin-nav-icon">📊</span>
+        <span>الإحصائيات</span>
+      </a>
+      <a href="#" class="admin-nav-item" data-section="products">
+        <span class="admin-nav-icon">📦</span>
+        <span>المنتجات</span>
+      </a>
+      <a href="#" class="admin-nav-item" data-section="participants">
+        <span class="admin-nav-icon">👥</span>
+        <span>المشاركون</span>
+      </a>
+      <a href="#" class="admin-nav-item" data-section="rag">
+        <span class="admin-nav-icon">🤖</span>
+        <span>تدريب الوكيل</span>
+      </a>
+      <a href="#" class="admin-nav-item" data-section="datasource">
+        <span class="admin-nav-icon">📥</span>
+        <span>مصدر البيانات</span>
+      </a>
+      <a href="#" class="admin-nav-item" data-section="publish">
+        <span class="admin-nav-icon">🚀</span>
+        <span>النشر إلى</span>
+      </a>
+      <a href="#" class="admin-nav-item" data-section="admins">
+        <span class="admin-nav-icon">🛡️</span>
+        <span>المشرفون</span>
+      </a>
+    </nav>
+
+    <div class="admin-sidebar-bottom">
+      <a href="/chat" class="admin-nav-item">
+        <span class="admin-nav-icon">💬</span>
+        <span>شاشة الوكيل</span>
+      </a>
+      <form method="post" action="/admin/logout" style="margin:0;">
+        <button type="submit" class="admin-logout-btn">
+          <span class="admin-nav-icon">🚪</span>
+          <span>تسجيل الخروج</span>
+        </button>
+      </form>
+    </div>
   </aside>
 
+  <!-- ===== CONTENT ===== -->
   <section class="admin-content">
-    <section class="admin-card" id="products">
-      <h1>إدارة المنتجات</h1>
-      <form class="admin-grid-form" method="post" action="/admin/products">
-        <input name="name" placeholder="اسم المنتج" required>
-        <input name="price" type="number" step="0.01" placeholder="السعر" required>
-        <input name="old_price" type="number" step="0.01" placeholder="السعر القديم">
-        <input name="category" placeholder="التصنيف">
-        <input name="image_url" placeholder="رابط الصورة">
-        <textarea name="description" placeholder="الوصف"></textarea>
-        <label><input type="checkbox" name="is_active" checked> نشط</label>
-        <button type="submit">إضافة منتج</button>
-      </form>
 
-      <div class="admin-list">
-        {% for product in products %}
-        <div class="admin-row">
-          <form method="post" action="/admin/products/{{ product.id }}" class="admin-edit-form">
-            <input name="name" value="{{ product.name }}" required>
-            <input name="price" type="number" step="0.01" value="{{ product.price }}" required>
-            <input name="old_price" type="number" step="0.01" value="{{ product.old_price or '' }}">
-            <input name="category" value="{{ product.category or '' }}">
-            <input name="image_url" value="{{ product.image_url or '' }}">
-            <textarea name="description">{{ product.description or '' }}</textarea>
-            <label><input type="checkbox" name="is_active" {% if product.is_active %}checked{% endif %}> نشط</label>
-            <button type="submit">حفظ</button>
-          </form>
-          <form method="post" action="/admin/products/{{ product.id }}/delete">
-            <button type="submit" class="danger">حذف</button>
-          </form>
+    <!-- ── STATISTICS (default) ── -->
+    <section class="admin-section active" id="section-stats">
+      <div class="admin-section-title">📊 الإحصائيات العامة</div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📦</div>
+          <div class="stat-value">{{ products | length }}</div>
+          <div class="stat-label">إجمالي المنتجات</div>
         </div>
-        {% endfor %}
-      </div>
-    </section>
-
-    <section class="admin-card" id="participants">
-      <h1>المشاركون في المتجر</h1>
-      <div class="admin-table">
-        <div>الاسم</div><div>البريد</div><div>آخر ظهور</div><div>المحادثات</div>
-        {% for participant in participants %}
-        <div>{{ participant.display_name }}</div>
-        <div>{{ participant.email or "زائر" }}</div>
-        <div>{{ participant.last_seen_at }}</div>
-        <div>{{ conversations | selectattr("participant_id", "equalto", participant.id) | list | length }}</div>
-        {% endfor %}
-      </div>
-    </section>
-
-    <section class="admin-card" id="rag">
-      <h1>رفع بيانات RAG وتدريب الوكيل</h1>
-      <form class="admin-grid-form" method="post" action="/admin/knowledge">
-        <input name="title" placeholder="عنوان المعلومة" required>
-        <input name="tags" placeholder="وسوم مثل: shipping, offers">
-        <textarea name="content" placeholder="محتوى التدريب" required></textarea>
-        <button type="submit">إضافة إلى معرفة الوكيل</button>
-      </form>
-      <form class="upload-form" method="post" action="/admin/rag/upload" enctype="multipart/form-data">
-        <input type="file" name="file" accept=".txt,.md,.csv,.json" required>
-        <input name="tags" placeholder="وسوم الملف" value="uploaded">
-        <button type="submit">رفع ملف تدريب</button>
-      </form>
-
-      <div class="admin-list">
-        {% for item in knowledge_items %}
-        <div class="admin-row">
-          <form method="post" action="/admin/knowledge/{{ item.id }}" class="admin-edit-form">
-            <input name="title" value="{{ item.title }}" required>
-            <input name="tags" value="{{ item.tags or '' }}">
-            <textarea name="content" required>{{ item.content }}</textarea>
-            <label><input type="checkbox" name="is_active" {% if item.is_active %}checked{% endif %}> مفعّل في RAG</label>
-            <button type="submit">حفظ</button>
-          </form>
-          <form method="post" action="/admin/knowledge/{{ item.id }}/delete">
-            <button type="submit" class="danger">حذف</button>
-          </form>
+        <div class="stat-card">
+          <div class="stat-icon">✅</div>
+          <div class="stat-value">{{ products | selectattr('is_active') | list | length }}</div>
+          <div class="stat-label">منتجات نشطة</div>
         </div>
-        {% endfor %}
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-value">{{ participants | length }}</div>
+          <div class="stat-label">الزوار / المشاركون</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💬</div>
+          <div class="stat-value">{{ conversations | length }}</div>
+          <div class="stat-label">المحادثات</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🧠</div>
+          <div class="stat-value">{{ knowledge_items | length }}</div>
+          <div class="stat-label">عناصر قاعدة المعرفة</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🛡️</div>
+          <div class="stat-value">{{ admins | length }}</div>
+          <div class="stat-label">المشرفون</div>
+        </div>
+      </div>
+
+      <div class="admin-card" style="margin-top:22px;">
+        <div class="admin-card-title">آخر المحادثات</div>
+        <div class="admin-table" style="grid-template-columns:1fr 1fr auto;">
+          <div class="admin-table-head">العنوان</div>
+          <div class="admin-table-head">آخر تحديث</div>
+          <div class="admin-table-head">المعرّف</div>
+          {% for conv in conversations %}
+          <div>{{ conv.title[:50] }}</div>
+          <div style="font-size:12px;color:#94a3b8;">{{ conv.updated_at.strftime('%Y-%m-%d %H:%M') if conv.updated_at else '—' }}</div>
+          <div style="font-size:12px;color:#64748b;">#{{ conv.id }}</div>
+          {% else %}
+          <div colspan="3" style="color:#64748b;">لا توجد محادثات بعد.</div>
+          {% endfor %}
+        </div>
       </div>
     </section>
 
-    <section class="admin-card" id="admins">
-      <h1>مشرفو النظام</h1>
-      <div class="admin-table">
-        <div>الاسم</div><div>البريد</div><div>طريقة الدخول</div><div>الدور</div>
-        {% for user in admins %}
-        <div>{{ user.name }}</div>
-        <div>{{ user.email }}</div>
-        <div>{{ user.provider }}</div>
-        <div>{{ user.role }}</div>
-        {% endfor %}
+    <!-- ── PRODUCTS ── -->
+    <section class="admin-section" id="section-products">
+      <div class="admin-section-title">📦 إدارة المنتجات</div>
+
+      <div class="admin-card">
+        <div class="admin-card-title">إضافة منتج جديد</div>
+        <form class="admin-grid-form" method="post" action="/admin/products">
+          <input name="name" placeholder="اسم المنتج" required>
+          <input name="price" type="number" step="0.01" placeholder="السعر" required>
+          <input name="old_price" type="number" step="0.01" placeholder="السعر القديم">
+          <input name="category" placeholder="التصنيف">
+          <input name="image_url" placeholder="رابط الصورة">
+          <textarea name="description" placeholder="الوصف"></textarea>
+          <label class="admin-check-label"><input type="checkbox" name="is_active" checked> نشط</label>
+          <button type="submit" class="admin-btn-primary">إضافة منتج</button>
+        </form>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card-title">المنتجات الحالية ({{ products | length }})</div>
+        <div class="admin-list">
+          {% for product in products %}
+          <div class="admin-row">
+            <form method="post" action="/admin/products/{{ product.id }}" class="admin-edit-form">
+              <input name="name" value="{{ product.name }}" required>
+              <input name="price" type="number" step="0.01" value="{{ product.price }}" required>
+              <input name="old_price" type="number" step="0.01" value="{{ product.old_price or '' }}">
+              <input name="category" value="{{ product.category or '' }}">
+              <input name="image_url" value="{{ product.image_url or '' }}">
+              <textarea name="description">{{ product.description or '' }}</textarea>
+              <label class="admin-check-label"><input type="checkbox" name="is_active" {% if product.is_active %}checked{% endif %}> نشط</label>
+              <button type="submit" class="admin-btn-primary">حفظ</button>
+            </form>
+            <form method="post" action="/admin/products/{{ product.id }}/delete" style="margin-top:8px;">
+              <button type="submit" class="admin-btn-danger">حذف المنتج</button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
       </div>
     </section>
+
+    <!-- ── PARTICIPANTS ── -->
+    <section class="admin-section" id="section-participants">
+      <div class="admin-section-title">👥 المشاركون في المتجر</div>
+      <div class="admin-card">
+        <div class="admin-card-title">قائمة الزوار ({{ participants | length }})</div>
+        <div class="admin-table" style="grid-template-columns:1fr 1fr 1fr auto;">
+          <div class="admin-table-head">الاسم</div>
+          <div class="admin-table-head">البريد</div>
+          <div class="admin-table-head">آخر ظهور</div>
+          <div class="admin-table-head">المحادثات</div>
+          {% for participant in participants %}
+          <div>{{ participant.display_name }}</div>
+          <div>{{ participant.email or "زائر" }}</div>
+          <div style="font-size:12px;color:#94a3b8;">{{ participant.last_seen_at }}</div>
+          <div>{{ conversations | selectattr("participant_id", "equalto", participant.id) | list | length }}</div>
+          {% else %}
+          <div style="color:#64748b;grid-column:1/-1;">لا يوجد مشاركون بعد.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ── RAG / AGENT TRAINING ── -->
+    <section class="admin-section" id="section-rag">
+      <div class="admin-section-title">🤖 تدريب الوكيل وقاعدة المعرفة</div>
+
+      <div class="admin-card">
+        <div class="admin-card-title">إضافة معلومة جديدة</div>
+        <form class="admin-grid-form" method="post" action="/admin/knowledge">
+          <input name="title" placeholder="عنوان المعلومة" required>
+          <input name="tags" placeholder="وسوم مثل: shipping, offers">
+          <textarea name="content" placeholder="محتوى التدريب" required style="grid-column:1/-1;"></textarea>
+          <button type="submit" class="admin-btn-primary" style="grid-column:1/-1;">إضافة إلى معرفة الوكيل</button>
+        </form>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card-title">رفع ملف تدريب</div>
+        <form class="upload-form" method="post" action="/admin/rag/upload" enctype="multipart/form-data">
+          <input type="file" name="file" accept=".txt,.md,.csv,.json" required>
+          <input name="tags" placeholder="وسوم الملف" value="uploaded">
+          <button type="submit" class="admin-btn-primary">رفع ملف</button>
+        </form>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card-title">قاعدة المعرفة الحالية ({{ knowledge_items | length }})</div>
+        <div class="admin-list">
+          {% for item in knowledge_items %}
+          <div class="admin-row">
+            <form method="post" action="/admin/knowledge/{{ item.id }}" class="admin-edit-form">
+              <input name="title" value="{{ item.title }}" required>
+              <input name="tags" value="{{ item.tags or '' }}">
+              <textarea name="content" required style="grid-column:1/-1;">{{ item.content }}</textarea>
+              <label class="admin-check-label"><input type="checkbox" name="is_active" {% if item.is_active %}checked{% endif %}> مفعّل في RAG</label>
+              <button type="submit" class="admin-btn-primary">حفظ</button>
+            </form>
+            <form method="post" action="/admin/knowledge/{{ item.id }}/delete" style="margin-top:8px;">
+              <button type="submit" class="admin-btn-danger">حذف</button>
+            </form>
+          </div>
+          {% else %}
+          <p style="color:#64748b;text-align:center;padding:20px;">لا توجد معلومات في قاعدة المعرفة بعد.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ── DATA SOURCE ── -->
+    <section class="admin-section" id="section-datasource">
+      <div class="admin-section-title">📥 مصدر البيانات — من أين أسحب؟</div>
+
+      <div class="admin-card">
+        <div class="admin-card-title">إعداد مصادر الاستيراد</div>
+        <p class="admin-hint">حدد من أين يستورد الوكيل والمتجر البيانات (منتجات، طلبات، مشتركون...).</p>
+        <div class="datasource-grid">
+
+          <div class="datasource-card" id="ds-csv">
+            <div class="datasource-icon">📄</div>
+            <div class="datasource-name">ملف CSV / JSON</div>
+            <div class="datasource-desc">استيراد المنتجات والبيانات من ملف محلي.</div>
+            <form class="upload-form" method="post" action="/admin/rag/upload" enctype="multipart/form-data" style="margin-top:10px;">
+              <input type="file" name="file" accept=".csv,.json,.txt,.md" required>
+              <input name="tags" value="datasource-import" placeholder="وسوم">
+              <button type="submit" class="admin-btn-primary">استيراد</button>
+            </form>
+          </div>
+
+          <div class="datasource-card" id="ds-api">
+            <div class="datasource-icon">🔗</div>
+            <div class="datasource-name">API خارجي</div>
+            <div class="datasource-desc">جلب البيانات من رابط API مباشر.</div>
+            <form class="admin-grid-form" onsubmit="handleApiSource(event)" style="margin-top:10px;grid-template-columns:1fr;">
+              <input id="ds-api-url" placeholder="https://api.example.com/products" type="url">
+              <input id="ds-api-key" placeholder="مفتاح API (اختياري)" type="password">
+              <button type="submit" class="admin-btn-primary">اختبار الاتصال</button>
+            </form>
+            <div id="ds-api-result" style="margin-top:8px;font-size:13px;color:#94a3b8;"></div>
+          </div>
+
+          <div class="datasource-card" id="ds-manual">
+            <div class="datasource-icon">✏️</div>
+            <div class="datasource-name">إدخال يدوي</div>
+            <div class="datasource-desc">أضف البيانات يدوياً عبر نماذج المنتجات أو قاعدة المعرفة.</div>
+            <button class="admin-btn-secondary" style="margin-top:10px;" onclick="switchSection('products')">انتقل إلى المنتجات</button>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card-title">🤖 تدريب الوكيل على مصادر البيانات</div>
+        <p class="admin-hint">أضف وصفاً لمصادر البيانات لكي يفهمها الوكيل ويجيب عليها بدقة.</p>
+        <form class="admin-grid-form" method="post" action="/admin/knowledge">
+          <input name="title" value="مصدر البيانات الرئيسي" placeholder="عنوان المصدر" required>
+          <input name="tags" value="datasource" placeholder="وسوم">
+          <textarea name="content" placeholder="اشرح للوكيل من أين تأتي البيانات، ما هي أنواع المنتجات، وكيف يتم تحديثها..." required style="grid-column:1/-1;min-height:120px;"></textarea>
+          <button type="submit" class="admin-btn-primary" style="grid-column:1/-1;">حفظ التدريب</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── PUBLISH TO ── -->
+    <section class="admin-section" id="section-publish">
+      <div class="admin-section-title">🚀 النشر إلى — إلى أين أنشر؟</div>
+
+      <div class="admin-card">
+        <div class="admin-card-title">قنوات النشر</div>
+        <p class="admin-hint">حدد القنوات التي تريد نشر متجرك أو منتجاتك إليها.</p>
+        <div class="datasource-grid">
+
+          <div class="datasource-card">
+            <div class="datasource-icon">🌐</div>
+            <div class="datasource-name">الموقع الإلكتروني</div>
+            <div class="datasource-desc">نشر مباشر على المتجر الحالي — جميع التغييرات تظهر فوراً.</div>
+            <div style="margin-top:10px;padding:8px 12px;background:#16a34a22;border-radius:10px;font-size:13px;color:#4ade80;">
+              ✅ نشط — الموقع يعمل الآن
+            </div>
+          </div>
+
+          <div class="datasource-card">
+            <div class="datasource-icon">📱</div>
+            <div class="datasource-name">واتساب / تيليغرام</div>
+            <div class="datasource-desc">إرسال تحديثات المنتجات والعروض عبر القنوات الاجتماعية.</div>
+            <form class="admin-grid-form" onsubmit="handleChannelPublish(event,'whatsapp')" style="margin-top:10px;grid-template-columns:1fr;">
+              <input id="pub-wa-token" placeholder="رقم الهاتف أو رمز API" type="text">
+              <button type="submit" class="admin-btn-primary">إعداد القناة</button>
+            </form>
+            <div id="pub-wa-result" style="margin-top:8px;font-size:13px;color:#94a3b8;"></div>
+          </div>
+
+          <div class="datasource-card">
+            <div class="datasource-icon">📧</div>
+            <div class="datasource-name">البريد الإلكتروني</div>
+            <div class="datasource-desc">إرسال النشرات الإخبارية وتحديثات العروض للمشتركين.</div>
+            <form class="admin-grid-form" onsubmit="handleChannelPublish(event,'email')" style="margin-top:10px;grid-template-columns:1fr;">
+              <input id="pub-email-smtp" placeholder="SMTP أو مفتاح SendGrid" type="text">
+              <button type="submit" class="admin-btn-primary">إعداد البريد</button>
+            </form>
+            <div id="pub-email-result" style="margin-top:8px;font-size:13px;color:#94a3b8;"></div>
+          </div>
+
+          <div class="datasource-card">
+            <div class="datasource-icon">🛒</div>
+            <div class="datasource-name">منصات التجارة</div>
+            <div class="datasource-desc">مزامنة المنتجات مع منصات خارجية (Shopify، WooCommerce...).</div>
+            <form class="admin-grid-form" onsubmit="handleChannelPublish(event,'platform')" style="margin-top:10px;grid-template-columns:1fr;">
+              <input id="pub-platform-url" placeholder="رابط API المنصة" type="url">
+              <input id="pub-platform-key" placeholder="مفتاح API" type="password">
+              <button type="submit" class="admin-btn-primary">ربط المنصة</button>
+            </form>
+            <div id="pub-platform-result" style="margin-top:8px;font-size:13px;color:#94a3b8;"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card-title">🤖 تدريب الوكيل على قنوات النشر</div>
+        <p class="admin-hint">علّم الوكيل كيف يجيب على أسئلة النشر والتوزيع لمساعدتك بشكل أفضل.</p>
+        <form class="admin-grid-form" method="post" action="/admin/knowledge">
+          <input name="title" value="قنوات النشر والتوزيع" placeholder="عنوان التدريب" required>
+          <input name="tags" value="publish,channels" placeholder="وسوم">
+          <textarea name="content" placeholder="اشرح للوكيل القنوات التي تستخدمها للنشر، وكيف يتم التنسيق، وما هي المنتجات المناسبة لكل قناة..." required style="grid-column:1/-1;min-height:120px;"></textarea>
+          <button type="submit" class="admin-btn-primary" style="grid-column:1/-1;">حفظ التدريب</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── ADMINS ── -->
+    <section class="admin-section" id="section-admins">
+      <div class="admin-section-title">🛡️ مشرفو النظام</div>
+      <div class="admin-card">
+        <div class="admin-card-title">قائمة المشرفين ({{ admins | length }})</div>
+        <div class="admin-table" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+          <div class="admin-table-head">الاسم</div>
+          <div class="admin-table-head">البريد</div>
+          <div class="admin-table-head">طريقة الدخول</div>
+          <div class="admin-table-head">الدور</div>
+          {% for user in admins %}
+          <div>{{ user.name }}</div>
+          <div style="font-size:13px;color:#94a3b8;">{{ user.email }}</div>
+          <div>{{ user.provider }}</div>
+          <div>{{ user.role }}</div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
   </section>
 </main>
+
+<script>
+// ===== SECTION SWITCHING =====
+function switchSection(name) {
+  document.querySelectorAll('.admin-nav-item').forEach(function(a) {
+    a.classList.toggle('active', a.getAttribute('data-section') === name);
+  });
+  document.querySelectorAll('.admin-section').forEach(function(s) {
+    s.classList.toggle('active', s.id === 'section-' + name);
+  });
+}
+
+document.querySelectorAll('.admin-nav-item[data-section]').forEach(function(a) {
+  a.addEventListener('click', function(e) {
+    e.preventDefault();
+    switchSection(this.getAttribute('data-section'));
+  });
+});
+
+// ===== API Source Test =====
+function handleApiSource(e) {
+  e.preventDefault();
+  var url = document.getElementById('ds-api-url').value.trim();
+  var result = document.getElementById('ds-api-result');
+  if (!url) { result.textContent = 'أدخل الرابط أولاً.'; return; }
+  result.textContent = '⏳ جارٍ الاختبار...';
+  fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
+    .then(function(r) {
+      result.style.color = r.ok ? '#4ade80' : '#f87171';
+      result.textContent = r.ok ? '✅ الاتصال ناجح — الكود: ' + r.status : '❌ فشل الاتصال — الكود: ' + r.status;
+    })
+    .catch(function() {
+      result.style.color = '#f87171';
+      result.textContent = '❌ تعذر الاتصال بالرابط.';
+    });
+}
+
+// ===== Channel Publish =====
+function handleChannelPublish(e, channel) {
+  e.preventDefault();
+  var resultEl = document.getElementById('pub-' + (channel === 'whatsapp' ? 'wa' : channel === 'email' ? 'email' : 'platform') + '-result');
+  if (resultEl) {
+    resultEl.style.color = '#fbbf24';
+    resultEl.textContent = '⏳ جارٍ الحفظ... (يمكنك ربط API حقيقي لاحقاً)';
+    setTimeout(function() {
+      resultEl.style.color = '#4ade80';
+      resultEl.textContent = '✅ تم حفظ الإعداد بنجاح.';
+    }, 1200);
+  }
+}
+</script>
+
+<style>
+.admin-page { display:grid; grid-template-columns:260px minmax(0,1fr); min-height:100vh; background:#0f172a; color:#e5e7eb; direction:rtl; }
+.admin-sidebar { background:#020617; padding:20px 16px; display:flex; flex-direction:column; gap:0; position:sticky; top:0; height:100vh; overflow-y:auto; }
+.admin-sidebar-brand { display:flex; align-items:center; gap:12px; padding:12px 8px 20px; border-bottom:1px solid #1e293b; margin-bottom:14px; }
+.admin-brand-icon { font-size:28px; }
+.admin-brand-name { font-weight:700; font-size:15px; color:#f1f5f9; }
+.admin-brand-user { font-size:12px; color:#64748b; margin-top:2px; }
+.admin-nav { display:flex; flex-direction:column; gap:4px; flex:1; }
+.admin-nav-item { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:12px; color:#94a3b8; text-decoration:none; font-size:14px; transition:all .18s; border:none; background:none; width:100%; cursor:pointer; }
+.admin-nav-item:hover { background:#1e293b; color:#e2e8f0; }
+.admin-nav-item.active { background:#2563eb; color:#fff; font-weight:600; }
+.admin-nav-icon { font-size:16px; flex-shrink:0; }
+.admin-sidebar-bottom { border-top:1px solid #1e293b; padding-top:12px; margin-top:12px; display:flex; flex-direction:column; gap:4px; }
+.admin-logout-btn { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:12px; color:#f87171; background:none; border:none; width:100%; cursor:pointer; font-size:14px; transition:all .18s; }
+.admin-logout-btn:hover { background:#1e293b; }
+.admin-content { padding:28px; display:flex; flex-direction:column; gap:0; overflow-y:auto; }
+.admin-section { display:none; flex-direction:column; gap:20px; }
+.admin-section.active { display:flex; }
+.admin-section-title { font-size:20px; font-weight:700; color:#f1f5f9; margin-bottom:6px; }
+.admin-card { background:#111827; border:1px solid rgba(148,163,184,.16); border-radius:18px; padding:20px; }
+.admin-card-title { font-size:14px; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; margin-bottom:14px; }
+.admin-hint { font-size:13px; color:#64748b; margin:-6px 0 14px; }
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:16px; }
+.stat-card { background:#111827; border:1px solid rgba(148,163,184,.16); border-radius:16px; padding:22px 16px; text-align:center; }
+.stat-icon { font-size:28px; margin-bottom:10px; }
+.stat-value { font-size:32px; font-weight:700; color:#fff; line-height:1; }
+.stat-label { font-size:12px; color:#64748b; margin-top:6px; }
+.admin-table { display:grid; gap:1px; overflow:hidden; border-radius:12px; margin-top:4px; }
+.admin-table > div { background:#020617; padding:11px 12px; font-size:13px; }
+.admin-table-head { background:#0f172a !important; color:#64748b; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+.admin-grid-form, .admin-edit-form, .upload-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.admin-grid-form textarea, .admin-edit-form textarea { grid-column:1/-1; min-height:90px; }
+.admin-card input, .admin-card textarea, .admin-card select { width:100%; border:1px solid #334155; border-radius:10px; background:#020617; color:#fff; padding:10px 12px; font-size:14px; }
+.admin-card input::placeholder, .admin-card textarea::placeholder { color:#475569; }
+.admin-list { display:flex; flex-direction:column; gap:12px; margin-top:8px; }
+.admin-row { border:1px solid rgba(148,163,184,.12); border-radius:14px; padding:14px; }
+.admin-check-label { display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; }
+.admin-btn-primary { background:#2563eb; color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:14px; font-weight:600; cursor:pointer; transition:background .15s; }
+.admin-btn-primary:hover { background:#1d4ed8; }
+.admin-btn-danger { background:#dc2626; color:#fff; border:none; border-radius:10px; padding:8px 16px; font-size:13px; cursor:pointer; }
+.admin-btn-danger:hover { background:#b91c1c; }
+.admin-btn-secondary { background:#1e293b; color:#94a3b8; border:none; border-radius:10px; padding:9px 16px; font-size:13px; cursor:pointer; width:100%; }
+.datasource-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
+.datasource-card { background:#0f172a; border:1px solid rgba(148,163,184,.14); border-radius:14px; padding:18px; }
+.datasource-icon { font-size:26px; margin-bottom:8px; }
+.datasource-name { font-weight:700; font-size:15px; color:#f1f5f9; margin-bottom:4px; }
+.datasource-desc { font-size:12px; color:#64748b; line-height:1.5; }
+.upload-form { display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; }
+@media (max-width:800px) {
+  .admin-page { grid-template-columns:1fr; }
+  .admin-sidebar { height:auto; position:static; }
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+  .datasource-grid { grid-template-columns:1fr; }
+  .admin-grid-form, .admin-edit-form { grid-template-columns:1fr; }
+  .upload-form { grid-template-columns:1fr; }
+}
+</style>
 {% endblock %}

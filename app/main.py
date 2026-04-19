@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 from urllib.request import Request as UrlRequest, urlopen
 
 from fastapi import FastAPI, Request, Depends, Form, UploadFile, File
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
@@ -483,7 +483,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     participants = db.query(models.StoreParticipant).order_by(models.StoreParticipant.last_seen_at.desc()).all()
     conversations = db.query(models.ChatConversation).order_by(models.ChatConversation.updated_at.desc()).limit(20).all()
     admins = db.query(models.AdminUser).order_by(models.AdminUser.created_at.desc()).all()
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name="admin.html",
         context={
@@ -495,6 +495,9 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
             "admins": admins,
         },
     )
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    return response
 
 @app.post("/admin/products")
 def admin_create_product(
