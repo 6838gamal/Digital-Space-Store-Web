@@ -959,3 +959,90 @@ html[dir="rtl"] .store-search-btn     { border-radius: 8px 0 0 8px; }
   .store-top-bar { display: none; }
   .store-action-label { display: none; }
 }
+
+/* ── ADMIN MODAL — two-field layout ─────────── */
+.admin-modal-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.admin-modal-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ── FOOTER SUBSCRIBE WITH GOOGLE ───────────── */
+.subscribe-section {
+  width: 100%;
+  text-align: center;
+  padding: 12px 0 4px;
+}
+
+.subscribe-label {
+  color: rgba(255,255,255,0.65);
+  font-size: 14px;
+  margin-bottom: 14px;
+}
+
+.subscribe-google-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  color: #1f2937;
+  border: none;
+  border-radius: 50px;
+  padding: 11px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.subscribe-google-btn:hover {
+  box-shadow: 0 6px 22px rgba(0,0,0,0.35);
+  transform: translateY(-1px);
+}
+
+.subscribe-google-btn:active {
+  transform: scale(0.97);
+}
+
+.subscribe-google-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.subscribe-success {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(34,197,94,0.15);
+  border: 1.5px solid rgba(34,197,94,0.35);
+  border-radius: 14px;
+  padding: 16px 24px;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.subscribe-success-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.subscribe-success strong {
+  display: block;
+  color: #22c55e;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.subscribe-success p {
+  margin: 2px 0 0;
+  color: rgba(255,255,255,0.6);
+  font-size: 13px;
+}

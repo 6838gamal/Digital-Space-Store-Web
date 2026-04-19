@@ -57,31 +57,70 @@
 <!-- Sidebar overlay -->
 <div id="sidenav-overlay"></div>
 
-<!-- Admin password modal -->
+<!-- Admin login modal -->
 <div class="admin-modal-overlay" id="adminModal">
   <div class="admin-modal-box">
     <button class="admin-modal-close-x" id="adminModalCloseX" aria-label="Close">&times;</button>
     <h3>🔐 <span data-en="Admin Access" data-ar="دخول الإدارة">Admin Access</span></h3>
-    <p data-en="Enter the admin password to continue." data-ar="أدخل كلمة مرور المدير للمتابعة.">Enter the admin password to continue.</p>
-    <form id="adminDemoLoginForm" action="/admin/demo-login" method="POST">
-      <input type="text" name="username" value="admin" autocomplete="username" style="display:none;">
+    <p data-en="Sign in with your admin account." data-ar="سجّل دخولك بحساب المدير.">Sign in with your admin account.</p>
+
+    <!-- Login fields form (prevents password-outside-form warning) -->
+    <form id="adminLoginFields" onsubmit="return false;">
+      <input type="email" class="admin-modal-input" id="adminEmailInput"
+             data-en-placeholder="Email address" data-ar-placeholder="البريد الإلكتروني"
+             placeholder="Email address" autocomplete="email">
+
       <input type="password" class="admin-modal-input" id="adminPasswordInput"
              data-en-placeholder="Password" data-ar-placeholder="كلمة المرور"
              placeholder="Password" autocomplete="current-password">
     </form>
+
     <div class="admin-modal-error" id="adminModalError"
-         data-en="Incorrect password. Please try again."
-         data-ar="كلمة المرور غير صحيحة. حاول مرة أخرى.">
-      Incorrect password. Please try again.
+         data-en="Invalid email or password." data-ar="البريد أو كلمة المرور غير صحيحة.">
+      Invalid email or password.
     </div>
+
     <div class="admin-modal-actions">
       <button class="admin-modal-submit" id="adminModalSubmit"
-              data-en="Enter" data-ar="دخول">Enter</button>
+              data-en="Sign In" data-ar="دخول">Sign In</button>
       <button class="admin-modal-cancel" id="adminModalCancel"
               data-en="Cancel" data-ar="إلغاء">Cancel</button>
     </div>
+
+    <div id="adminModalSpinner" style="display:none;text-align:center;padding:8px 0;font-size:13px;color:var(--text-muted);">
+      ⏳ <span data-en="Signing in..." data-ar="جارٍ التسجيل...">Signing in...</span>
+    </div>
+
+    <!-- Hidden form for server session creation -->
+    <form id="adminDemoLoginForm" action="/admin/demo-login" method="POST" style="display:none;">
+      <input type="text" name="username" value="admin">
+    </form>
   </div>
 </div>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<!-- Firebase init -->
+<script>
+(function() {
+  var firebaseConfig = {
+    apiKey:            "AIzaSyCsLmJoMNIqYNvKKQJ-iG7WjdTnC7XD12w",
+    authDomain:        "digital-space-store.firebaseapp.com",
+    databaseURL:       "https://digital-space-store-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:         "digital-space-store",
+    storageBucket:     "digital-space-store.firebasestorage.app",
+    messagingSenderId: "738483723057",
+    appId:             "1:738483723057:web:c6c3aa51812383815aee10",
+    measurementId:     "G-10DK0BB0KJ"
+  };
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+})();
+</script>
 
 <!-- JS -->
 <script src="{{ url_for('static', path='js/jquery.min.js') }}"></script>
@@ -246,50 +285,78 @@ function toggleTheme() {
   applyTheme(newTheme);
 }
 
-// ===== ADMIN MODAL =====
-var ADMIN_PASSWORD = '111';
-
+// ===== ADMIN MODAL (Firebase Auth) =====
 function openAdminModal() {
   closeNav();
   var modal = document.getElementById('adminModal');
   modal.classList.add('active');
   setTimeout(function() {
-    var input = document.getElementById('adminPasswordInput');
-    if (input) input.focus();
-  }, 100);
+    var emailInput = document.getElementById('adminEmailInput');
+    if (emailInput) emailInput.focus();
+  }, 120);
 }
 
 function closeAdminModal() {
   document.getElementById('adminModal').classList.remove('active');
-  document.getElementById('adminPasswordInput').value = '';
+  var emailEl = document.getElementById('adminEmailInput');
+  var passEl  = document.getElementById('adminPasswordInput');
+  var err     = document.getElementById('adminModalError');
+  var spinner = document.getElementById('adminModalSpinner');
+  var submit  = document.getElementById('adminModalSubmit');
+  if (emailEl) emailEl.value = '';
+  if (passEl)  { passEl.value = ''; passEl.classList.remove('error'); }
+  if (err)     err.classList.remove('visible');
+  if (spinner) spinner.style.display = 'none';
+  if (submit)  submit.disabled = false;
+}
+
+function showAdminError(msg) {
   var err = document.getElementById('adminModalError');
-  err.classList.remove('visible');
-  document.getElementById('adminPasswordInput').classList.remove('error');
+  var passEl = document.getElementById('adminPasswordInput');
+  if (err) { err.textContent = msg; err.classList.add('visible'); }
+  if (passEl) {
+    passEl.classList.add('error');
+    setTimeout(function() { passEl.classList.remove('error'); }, 400);
+  }
+  var spinner = document.getElementById('adminModalSpinner');
+  var submit  = document.getElementById('adminModalSubmit');
+  if (spinner) spinner.style.display = 'none';
+  if (submit)  submit.disabled = false;
 }
 
 function submitAdminPassword() {
-  var input = document.getElementById('adminPasswordInput');
-  var err = document.getElementById('adminModalError');
-  var val = input.value.trim();
+  var emailEl   = document.getElementById('adminEmailInput');
+  var passEl    = document.getElementById('adminPasswordInput');
+  var spinner   = document.getElementById('adminModalSpinner');
+  var submit    = document.getElementById('adminModalSubmit');
+  var lang      = getCurrentLang();
 
-  if (val === ADMIN_PASSWORD) {
-    closeAdminModal();
-    // Create and submit a clean form to bypass event prevention
-    var f = document.createElement('form');
-    f.method = 'POST';
-    f.action = '/admin/demo-login';
-    document.body.appendChild(f);
-    f.submit();
-  } else {
-    input.classList.add('error');
-    err.classList.add('visible');
-    // Update error text based on language
-    var lang = getCurrentLang();
-    err.textContent = TRANSLATIONS[lang]['admin-modal-error'];
-    setTimeout(function() { input.classList.remove('error'); }, 400);
-    input.value = '';
-    input.focus();
+  var email    = emailEl ? emailEl.value.trim() : '';
+  var password = passEl  ? passEl.value         : '';
+
+  if (!email || !password) {
+    showAdminError(lang === 'ar' ? 'أدخل البريد الإلكتروني وكلمة المرور.' : 'Please enter email and password.');
+    return;
   }
+
+  if (spinner) spinner.style.display = 'block';
+  if (submit)  submit.disabled = true;
+
+  // Firebase email/password sign-in
+  firebase.auth().signInWithEmailAndPassword(email, password)
+    .then(function() {
+      // Server session
+      document.getElementById('adminDemoLoginForm').submit();
+    })
+    .catch(function(error) {
+      var msg = lang === 'ar'
+        ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
+        : 'Invalid email or password.';
+      if (error.code === 'auth/too-many-requests') {
+        msg = lang === 'ar' ? 'محاولات كثيرة، حاول لاحقاً.' : 'Too many attempts. Try later.';
+      }
+      showAdminError(msg);
+    });
 }
 
 document.getElementById('adminModal').addEventListener('click', function(e) {
@@ -302,10 +369,61 @@ document.getElementById('adminPasswordInput').addEventListener('keydown', functi
   if (e.key === 'Enter') { e.preventDefault(); submitAdminPassword(); }
   if (e.key === 'Escape') closeAdminModal();
 });
-document.getElementById('adminDemoLoginForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  submitAdminPassword();
+document.getElementById('adminEmailInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    var pass = document.getElementById('adminPasswordInput');
+    if (pass) pass.focus();
+  }
+  if (e.key === 'Escape') closeAdminModal();
 });
+
+// ===== GOOGLE SUBSCRIBE (Footer) =====
+function subscribeWithGoogle() {
+  var btn = document.getElementById('subscribeGoogleBtn');
+  if (btn) {
+    btn.disabled = true;
+    var lang = getCurrentLang();
+    btn.innerHTML = '⏳ ' + (lang === 'ar' ? 'جارٍ الاتصال...' : 'Connecting...');
+  }
+
+  var provider = new firebase.auth.GoogleAuthProvider();
+  provider.addScope('email');
+
+  firebase.auth().signInWithPopup(provider)
+    .then(function(result) {
+      var user  = result.user;
+      var uid   = user.uid;
+      var email = user.email;
+      var name  = user.displayName || '';
+
+      return firebase.database().ref('subscribers/' + uid).set({
+        email:        email,
+        name:         name,
+        subscribedAt: Date.now(),
+        lang:         getCurrentLang()
+      });
+    })
+    .then(function() {
+      var pre  = document.getElementById('subscribe-state-pre');
+      var post = document.getElementById('subscribe-state-post');
+      if (pre)  pre.style.display  = 'none';
+      if (post) post.style.display = 'flex';
+
+      // Redirect to home after 2 seconds
+      setTimeout(function() { window.location.href = '/'; }, 2000);
+    })
+    .catch(function(error) {
+      if (btn) {
+        btn.disabled = false;
+        var lang2 = getCurrentLang();
+        btn.innerHTML = (lang2 === 'ar' ? '🔔 اشترك بـ Google' : '🔔 Subscribe with Google');
+      }
+      if (error.code !== 'auth/popup-closed-by-user') {
+        console.error('Subscribe error:', error.code);
+      }
+    });
+}
 
 // ===== SIDEBAR SUBMENU TOGGLE =====
 document.querySelectorAll('.sidenav-toggle-item').forEach(function(item) {
