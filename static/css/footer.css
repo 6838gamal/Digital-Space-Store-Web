@@ -111,7 +111,7 @@ input.mail_bt::placeholder {
     width: 100%;
     float: left;
     background-color: #252525;
-    padding-bottom: 90px; /* space above fixed bottom-bar */
+    padding-bottom: 120px; /* space above fixed bottom-bar */
 }
 
 .copyright_text {
