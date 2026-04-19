@@ -28,3 +28,4 @@ python-multipart
 sqlalchemy
 uvicorn
 google-generativeai
+google-genai

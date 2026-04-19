@@ -273,7 +273,8 @@ def chat_api(request: Request, payload: ChatRequest, db: Session = Depends(get_d
     )
     db.add(user_message)
 
-    response = build_agent_response(payload.message, db)
+    history_dicts = [{"role": m.role, "content": m.content} for m in payload.history]
+    response = build_agent_response(payload.message, db, history=history_dicts)
     assistant_message = models.ChatMessageRecord(
         conversation_id=conversation.id,
         role="assistant",
@@ -631,6 +632,58 @@ async def admin_upload_rag(
         db.add(models.KnowledgeItem(title=title, content=content, tags=tags))
         db.commit()
     return RedirectResponse(url="/admin#rag", status_code=302)
+
+
+# ---------------------------
+# Voice Transcription API
+# ---------------------------
+@app.post("/api/transcribe")
+async def transcribe_audio(
+    audio: UploadFile = File(...),
+    lang: str = Form("en"),
+):
+    import tempfile
+    from google import genai as gai
+    from google.genai import types as gtypes
+
+    api_key = os.getenv("GEMINI_API_KEY", "")
+    if not api_key:
+        return {"text": "", "error": "No Gemini API key"}
+
+    try:
+        raw = await audio.read()
+        if not raw:
+            return {"text": "", "error": "Empty audio"}
+
+        client = gai.Client(api_key=api_key)
+
+        suffix = ".webm"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(raw)
+            tmp_path = tmp.name
+
+        try:
+            uploaded = client.files.upload(file=tmp_path, config={"mime_type": "audio/webm"})
+            lang_name = "Arabic" if lang == "ar" else "English"
+            prompt = (
+                f"Transcribe this audio recording exactly as spoken in {lang_name}. "
+                "Return only the transcribed text, nothing else."
+            )
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=[uploaded, prompt],
+            )
+            text = response.text.strip()
+        finally:
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
+
+        return {"text": text}
+    except Exception as e:
+        print(f"Transcribe error: {e}")
+        return {"text": "", "error": str(e)}
 
 
 # ---------------------------

@@ -1,3 +1,4 @@
+import os
 import re
 from dataclasses import dataclass
 from typing import Any
@@ -90,7 +91,7 @@ def tokenize(text: str) -> set[str]:
     return {token for token in tokens if len(token) > 1 and token not in STOP_WORDS}
 
 
-def retrieve_context(message: str, documents: list[RetrievalDocument], limit: int = 4) -> list[RetrievalDocument]:
+def retrieve_context(message: str, documents: list[RetrievalDocument], limit: int = 5) -> list[RetrievalDocument]:
     query_tokens = tokenize(message)
     if not query_tokens:
         return documents[:limit]
@@ -133,32 +134,108 @@ def action(label: str, url: str) -> dict[str, str]:
     return {"label": label, "url": url}
 
 
-def build_agent_response(message: str, db: Session) -> dict[str, Any]:
+def build_store_context(documents: list[RetrievalDocument]) -> str:
+    lines = ["=== معلومات المتجر والمنتجات ==="]
+    products = [d for d in documents if d.source_type == "product"]
+    knowledge = [d for d in documents if d.source_type == "knowledge"]
+
+    if products:
+        lines.append("\nالمنتجات المتاحة:")
+        for p in products:
+            meta = p.metadata
+            price = meta.get("price", "")
+            old_price = meta.get("old_price", "")
+            category = meta.get("category", "")
+            line = f"- {p.title}: سعر ${price}"
+            if old_price:
+                line += f" (كان ${old_price})"
+            if category:
+                line += f" | تصنيف: {category}"
+            line += f" | رابط: {p.url}"
+            lines.append(line)
+
+    if knowledge:
+        lines.append("\nمعلومات المتجر:")
+        for k in knowledge:
+            lines.append(f"- {k.title}: {k.content}")
+
+    lines.append("\nروابط مهمة: الرئيسية(/), السلة(/cart), الدفع(/checkout), طلباتي(/orders), حسابي(/profile)")
+    return "\n".join(lines)
+
+
+def build_gemini_reply(message: str, history: list[dict], store_context: str) -> str | None:
+    api_key = os.getenv("GEMINI_API_KEY", "")
+    if not api_key:
+        return None
+
+    try:
+        from google import genai
+        from google.genai import types
+
+        client = genai.Client(api_key=api_key)
+
+        system_instruction = f"""أنت وكيل تسوق ذكي لمتجر "Digital Space Store". مهمتك مساعدة العملاء في:
+- اكتشاف المنتجات والمقارنة بينها
+- الإجابة على أسئلة المتجر بدقة
+- توجيه العميل إلى السلة والدفع والطلبات
+- تقديم اقتراحات مناسبة حسب احتياجات العميل
+
+{store_context}
+
+قواعد مهمة:
+- أجب دائماً بنفس لغة السؤال (عربي أو إنجليزي)
+- كن ودوداً وموجزاً وعملياً
+- إذا ذكرت منتجاً، اذكر سعره ورابطه
+- لا تخترع منتجات غير موجودة في القائمة
+- اذكر الروابط المناسبة دائماً (مثل /cart أو /checkout)
+"""
+
+        contents = []
+        for h in history[-10:]:
+            role = "user" if h.get("role") == "user" else "model"
+            contents.append(types.Content(role=role, parts=[types.Part(text=h.get("content", ""))]))
+        contents.append(types.Content(role="user", parts=[types.Part(text=message)]))
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                max_output_tokens=1024,
+                temperature=0.7,
+            ),
+        )
+        return response.text.strip()
+    except Exception as e:
+        print(f"Gemini error: {e}")
+        return None
+
+
+def build_agent_response(message: str, db: Session, history: list[dict] | None = None) -> dict[str, Any]:
+    if history is None:
+        history = []
+
     documents = build_retrieval_documents(db)
     matches = retrieve_context(message, documents)
     products = [document for document in matches if document.source_type == "product"]
     intent = detect_intent(message)
 
+    store_context = build_store_context(documents)
+    gemini_reply = build_gemini_reply(message, history, store_context)
+
     actions = [action("تصفح المتجر", "/")]
-    suggestions = ["اقترح لي منتجاً مناسباً", "افتح السلة", "كيف أكمل الطلب؟"]
 
     if intent == "cart":
-        reply = "يمكنني توجيهك مباشرة إلى السلة لمراجعة المنتجات قبل الدفع."
         actions = [action("فتح السلة", "/cart"), action("إكمال الدفع", "/checkout")]
     elif intent == "checkout":
-        reply = "لإكمال الشراء، انتقل إلى صفحة الدفع بعد مراجعة السلة. إذا كنت تريد، أستطيع أيضاً اقتراح منتج قبل الدفع."
         actions = [action("فتح صفحة الدفع", "/checkout"), action("مراجعة السلة", "/cart")]
     elif intent == "orders":
-        reply = "يمكنك متابعة طلباتك من صفحة الطلبات. لاحقاً يمكن ربط الوكيل بحالة الطلب الفعلية من قاعدة البيانات."
         actions = [action("عرض الطلبات", "/orders"), action("حسابي", "/profile")]
     elif intent == "profile":
-        reply = "يمكنك إدارة بياناتك من صفحة الحساب، مثل الاسم والبريد ورقم الهاتف."
         actions = [action("فتح حسابي", "/profile"), action("عرض الطلبات", "/orders")]
     elif intent == "add_product":
-        reply = "يمكنك إضافة منتج جديد من صفحة إضافة المنتجات. هذه نقطة مناسبة لاحقاً لربط إدارة المنتجات بالوكيل."
         actions = [action("إضافة منتج", "/add-product")]
     elif intent == "capabilities":
-        reply = "أستطيع مساعدتك في البحث عن المنتجات، اقتراح خيارات حسب السعر أو التصنيف، فتح السلة، الدفع، الطلبات، الحساب، وتوجيهك داخل المتجر عبر الدردشة."
         actions = [
             action("المنتجات", "/"),
             action("السلة", "/cart"),
@@ -166,38 +243,45 @@ def build_agent_response(message: str, db: Session) -> dict[str, Any]:
             action("حسابي", "/profile"),
         ]
     elif intent == "product_search" or products:
-        if not products:
-            products = [document for document in documents if document.source_type == "product"][:3]
-        product_lines = []
-        actions = []
-        for product in products[:3]:
-            price = product.metadata.get("price")
-            category = product.metadata.get("category") or "عام"
-            product_lines.append(f"- {product.title}: بسعر ${price} ضمن تصنيف {category}.")
-            actions.append(action(f"عرض {product.title}", product.url))
+        all_products = [d for d in documents if d.source_type == "product"]
+        shown = (products or all_products)[:3]
+        actions = [action(f"عرض {p.title}", p.url) for p in shown]
         actions.append(action("فتح السلة", "/cart"))
-        reply = "وجدت لك هذه الخيارات المناسبة:\n" + "\n".join(product_lines)
     else:
-        context = matches[0].content if matches else ""
-        reply = f"أنا وكيل التسوق داخل المتجر. {context} أخبرني بما تبحث عنه، السعر المناسب، أو القسم الذي تفضله وسأوجهك."
         actions = [
             action("تصفح المنتجات", "/"),
             action("السلة", "/cart"),
             action("الدفع", "/checkout"),
         ]
 
+    if gemini_reply:
+        reply = gemini_reply
+    else:
+        if intent == "cart":
+            reply = "يمكنني توجيهك مباشرة إلى السلة لمراجعة المنتجات قبل الدفع."
+        elif intent == "checkout":
+            reply = "لإكمال الشراء، انتقل إلى صفحة الدفع بعد مراجعة السلة."
+        elif intent == "orders":
+            reply = "يمكنك متابعة طلباتك من صفحة الطلبات."
+        elif intent == "profile":
+            reply = "يمكنك إدارة بياناتك من صفحة الحساب."
+        elif intent == "capabilities":
+            reply = "أستطيع مساعدتك في البحث عن المنتجات، اقتراح خيارات، فتح السلة، الدفع، الطلبات، والحساب."
+        elif intent == "product_search" or products:
+            shown = (products or [d for d in documents if d.source_type == "product"])[:3]
+            lines = [f"- {p.title}: بسعر ${p.metadata.get('price')} ضمن تصنيف {p.metadata.get('category') or 'عام'}." for p in shown]
+            reply = "وجدت لك هذه الخيارات:\n" + "\n".join(lines)
+        else:
+            ctx = matches[0].content if matches else ""
+            reply = f"أنا وكيل التسوق. {ctx} أخبرني بما تبحث عنه."
+
     return {
         "reply": reply,
         "intent": intent,
         "matches": [
-            {
-                "title": document.title,
-                "source_type": document.source_type,
-                "url": document.url,
-                "metadata": document.metadata,
-            }
-            for document in matches
+            {"title": d.title, "source_type": d.source_type, "url": d.url, "metadata": d.metadata}
+            for d in matches
         ],
         "actions": actions,
-        "suggestions": suggestions,
+        "suggestions": ["اقترح لي منتجاً", "افتح السلة", "كيف أكمل الطلب؟"],
     }

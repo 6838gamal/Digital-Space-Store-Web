@@ -1,9 +1,97 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
-  /* Hide store chrome on chat page */
   #back-to-top, #sidenav-overlay { display: none !important; }
+
+  /* ---- Auth Gate ---- */
+  .chat-auth-gate {
+    position: fixed; inset: 0; background: #0a0f1e;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 200; padding: 24px; text-align: center; gap: 18px;
+  }
+  .chat-auth-gate-icon { font-size: 60px; animation: floatBot 3s ease-in-out infinite; }
+  .chat-auth-gate h2 { color: #f1f5f9; font-size: 20px; font-weight: 700; margin: 0; }
+  .chat-auth-gate p { color: #64748b; font-size: 14px; max-width: 320px; line-height: 1.7; margin: 0; }
+  .chat-auth-google-btn {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff; color: #1e293b; border: none; border-radius: 12px;
+    padding: 12px 22px; font-size: 15px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18); transition: box-shadow .2s, transform .15s;
+  }
+  .chat-auth-google-btn:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.28); transform: translateY(-1px); }
+  .chat-auth-user-card {
+    background: #1e293b; border: 1px solid rgba(148,163,184,.18); border-radius: 16px;
+    padding: 16px 22px; display: flex; align-items: center; gap: 14px; max-width: 340px; width: 100%;
+  }
+  .chat-auth-avatar { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; background: #334155; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .chat-auth-name { font-weight: 700; color: #f1f5f9; font-size: 15px; }
+  .chat-auth-email { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .chat-auth-badge { font-size: 11px; color: #4ade80; margin-top: 4px; }
+  .chat-start-btn {
+    background: #f26522; color: #fff; border: none; border-radius: 12px;
+    padding: 13px 32px; font-size: 15px; font-weight: 700; cursor: pointer;
+    transition: background .2s; width: 100%; max-width: 340px;
+  }
+  .chat-start-btn:hover { background: #d4521a; }
+  .chat-auth-signout { background: none; border: none; color: #64748b; font-size: 13px; cursor: pointer; text-decoration: underline; margin-top: -6px; }
+
+  /* ---- Voice button ---- */
+  .chat-voice-btn {
+    flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%;
+    background: rgba(255,255,255,0.07); border: 1.5px solid rgba(148,163,184,.2);
+    color: #94a3b8; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all .2s; font-size: 18px;
+  }
+  .chat-voice-btn:hover { background: rgba(59,130,246,.15); border-color: rgba(59,130,246,.4); color: #93c5fd; }
+  .chat-voice-btn.recording { background: rgba(239,68,68,.15); border-color: rgba(239,68,68,.5); color: #f87171; animation: pulse-rec .8s ease-in-out infinite; }
+  @keyframes pulse-rec { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.4); } 50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); } }
+
+  /* ---- TTS button on bubble ---- */
+  .bubble-tts-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(59,130,246,.12); border: 1px solid rgba(59,130,246,.25);
+    color: #93c5fd; border-radius: 999px; padding: 4px 10px; font-size: 11px;
+    cursor: pointer; margin-top: 6px; transition: background .2s;
+  }
+  .bubble-tts-btn:hover { background: rgba(59,130,246,.22); }
+  .bubble-tts-btn.speaking { color: #4ade80; border-color: rgba(74,222,128,.4); animation: pulse-tts 1s ease-in-out infinite; }
+  @keyframes pulse-tts { 0%,100% { opacity:1; } 50% { opacity:.5; } }
+
+  @keyframes floatBot { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 </style>
+
+<!-- ===== AUTH GATE ===== -->
+<div id="chatAuthGate" class="chat-auth-gate">
+  <div class="chat-auth-gate-icon">🤖</div>
+  <h2 data-en="AI Shopping Assistant" data-ar="وكيل التسوق الذكي">AI Shopping Assistant</h2>
+  <p data-en="Subscribe with your Google account to start chatting with the AI assistant." data-ar="اشترك بحساب Google للوصول إلى وكيل الذكاء الاصطناعي.">
+    Subscribe with your Google account to start chatting with the AI assistant.
+  </p>
+
+  <!-- Not-signed-in state -->
+  <div id="authStateGuest">
+    <button class="chat-auth-google-btn" onclick="chatGoogleSignIn()">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.3 6.5 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.8 18.9 12 24 12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.3 6.5 29.4 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.6l6.2 5.2C37 36.5 44 31 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+      <span data-en="Sign in with Google" data-ar="تسجيل الدخول بـ Google">Sign in with Google</span>
+    </button>
+    <div id="authError" style="display:none;color:#f87171;font-size:13px;margin-top:8px;"></div>
+  </div>
+
+  <!-- Signed-in state -->
+  <div id="authStateSigned" style="display:none;flex-direction:column;align-items:center;gap:12px;width:100%;">
+    <div class="chat-auth-user-card">
+      <div class="chat-auth-avatar" id="authAvatarWrap">👤</div>
+      <div>
+        <div class="chat-auth-name" id="authDisplayName">—</div>
+        <div class="chat-auth-email" id="authDisplayEmail">—</div>
+        <div class="chat-auth-badge">✅ <span data-en="Subscribed" data-ar="مشترك">Subscribed</span></div>
+      </div>
+    </div>
+    <button class="chat-start-btn" onclick="enterChat()" data-en="Start Chatting" data-ar="ابدأ الدردشة">Start Chatting</button>
+    <button class="chat-auth-signout" onclick="chatSignOut()" data-en="Sign out" data-ar="تسجيل الخروج">Sign out</button>
+  </div>
+</div>
+<!-- ===== /AUTH GATE ===== -->
 
 <!-- ===== CHAT CONVERSATION DRAWER ===== -->
 <div id="chatDrawer" class="chat-drawer">
@@ -14,62 +102,57 @@
       <button class="chat-drawer-close" id="chatDrawerClose" aria-label="Close">&#x2715;</button>
     </div>
   </div>
+  <!-- User info strip in drawer -->
+  <div id="drawerUserStrip" style="padding:10px 14px 0;display:none;">
+    <div style="display:flex;align-items:center;gap:10px;background:#1e293b;border-radius:10px;padding:10px 12px;">
+      <div id="drawerAvatar" style="width:34px;height:34px;border-radius:50%;background:#334155;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">👤</div>
+      <div style="min-width:0;">
+        <div id="drawerName" style="font-size:13px;font-weight:600;color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div>
+        <div style="font-size:11px;color:#4ade80;" data-en="✅ Subscribed" data-ar="✅ مشترك">✅ Subscribed</div>
+      </div>
+    </div>
+  </div>
   <div class="chat-drawer-body">
     <div class="conversation-list" id="conversationList"></div>
   </div>
 </div>
 <div id="chatDrawerOverlay"></div>
-<!-- ===== /CHAT DRAWER ===== -->
 
 <!-- ===== MAIN CHAT PAGE ===== -->
-<div class="chat-page-clean">
-
-  <!-- Top Bar -->
+<div class="chat-page-clean" id="chatMain" style="display:none;">
   <div class="chat-topbar">
     <button class="chat-menu-btn" id="chatMenuBtn" aria-label="Open conversations">
-      <span class="chat-menu-icon">
-        <span></span><span></span><span></span>
-      </span>
+      <span class="chat-menu-icon"><span></span><span></span><span></span></span>
     </button>
-
     <div class="chat-topbar-title">
-      <div class="chat-topbar-name" data-en="AI Shopping Assistant" data-ar="وكيل التسوق الذكي">
-        AI Shopping Assistant
-      </div>
-      <div class="chat-topbar-sub" data-en="Ask me anything about products" data-ar="اسألني عن أي منتج أو خدمة">
-        Ask me anything about products
-      </div>
+      <div class="chat-topbar-name" data-en="AI Shopping Assistant" data-ar="وكيل التسوق الذكي">AI Shopping Assistant</div>
+      <div class="chat-topbar-sub" id="chatTopbarSub" data-en="Powered by Gemini AI" data-ar="مدعوم بـ Gemini AI">Powered by Gemini AI</div>
     </div>
-
     <a class="chat-back-btn" href="/" data-en="Store" data-ar="المتجر">Store</a>
   </div>
 
-  <!-- Messages Area -->
   <div class="chat-messages-area" id="chatMessages">
-    <div class="chat-welcome">
+    <div class="chat-welcome" id="chatWelcome">
       <div class="chat-welcome-icon">🤖</div>
-      <div class="chat-welcome-text" data-en="Hello! I'm your AI shopping assistant. I can help you find products, browse categories, or guide you through checkout." data-ar="مرحباً! أنا وكيل التسوق الذكي. أستطيع مساعدتك في إيجاد المنتجات والتصفح والدفع.">
-        Hello! I'm your AI shopping assistant. I can help you find products, browse categories, or guide you through checkout.
+      <div class="chat-welcome-text" id="chatWelcomeText"
+           data-en="Hello! I'm your AI shopping assistant powered by Gemini. Ask me anything about products, prices, or your orders."
+           data-ar="مرحباً! أنا وكيلك الذكي المدعوم بـ Gemini. اسألني عن أي منتج أو سعر أو طلب.">
+        Hello! I'm your AI shopping assistant powered by Gemini. Ask me anything about products, prices, or your orders.
       </div>
     </div>
   </div>
 
-  <!-- Quick Prompts -->
   <div class="chat-quick-bar" id="quickPrompts">
-    <button type="button" data-prompt-en="Suggest me a product" data-prompt-ar="اقترح لي منتجاً"
-            data-en="Suggest product" data-ar="اقترح منتج">Suggest product</button>
-    <button type="button" data-prompt-en="Open my cart" data-prompt-ar="افتح السلة"
-            data-en="Cart" data-ar="السلة">Cart</button>
-    <button type="button" data-prompt-en="How do I checkout?" data-prompt-ar="كيف أكمل الطلب؟"
-            data-en="Checkout" data-ar="الدفع">Checkout</button>
-    <button type="button" data-prompt-en="What can you do?" data-prompt-ar="ماذا تستطيع أن تفعل؟"
-            data-en="Capabilities" data-ar="مزايا الوكيل">Capabilities</button>
+    <button type="button" data-prompt-en="Suggest me a product" data-prompt-ar="اقترح لي منتجاً" data-en="Suggest product" data-ar="اقترح منتج">Suggest product</button>
+    <button type="button" data-prompt-en="Open my cart" data-prompt-ar="افتح السلة" data-en="Cart" data-ar="السلة">Cart</button>
+    <button type="button" data-prompt-en="How do I checkout?" data-prompt-ar="كيف أكمل الطلب؟" data-en="Checkout" data-ar="الدفع">Checkout</button>
+    <button type="button" data-prompt-en="What can you do?" data-prompt-ar="ماذا تستطيع أن تفعل؟" data-en="Capabilities" data-ar="مزايا الوكيل">Capabilities</button>
   </div>
 
-  <!-- Input Bar -->
   <form class="chat-input-bar" id="chatForm">
+    <button type="button" class="chat-voice-btn" id="voiceBtn" title="Record voice">🎙️</button>
     <input type="text" id="userInput"
-           data-en-placeholder="Type your message..." data-ar-placeholder="اكتب طلبك هنا..."
+           data-en-placeholder="Type your message..." data-ar-placeholder="اكتب رسالتك أو سجّل صوتك..."
            placeholder="Type your message..." autocomplete="off" />
     <button type="submit" class="chat-send-btn" aria-label="Send">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -78,14 +161,31 @@
       </svg>
     </button>
   </form>
-
 </div>
-<!-- ===== /MAIN CHAT PAGE ===== -->
 
 <script>
 (function() {
+  // ===== STATE =====
   var chatHistory = [];
   var currentConversationId = null;
+  var mediaRecorder = null;
+  var audioChunks = [];
+  var isRecording = false;
+  var currentTtsUtterance = null;
+  var chatUser = null; // {uid, name, email, photo}
+
+  // ===== ELEMENTS =====
+  var authGate      = document.getElementById('chatAuthGate');
+  var chatMain      = document.getElementById('chatMain');
+  var authStateSigned = document.getElementById('authStateSigned');
+  var authStateGuest  = document.getElementById('authStateGuest');
+  var authDisplayName = document.getElementById('authDisplayName');
+  var authDisplayEmail= document.getElementById('authDisplayEmail');
+  var authAvatarWrap  = document.getElementById('authAvatarWrap');
+  var drawerUserStrip = document.getElementById('drawerUserStrip');
+  var drawerAvatar    = document.getElementById('drawerAvatar');
+  var drawerName      = document.getElementById('drawerName');
+  var authError       = document.getElementById('authError');
 
   var form        = document.getElementById('chatForm');
   var input       = document.getElementById('userInput');
@@ -97,30 +197,151 @@
   var drawer      = document.getElementById('chatDrawer');
   var overlay     = document.getElementById('chatDrawerOverlay');
   var drawerClose = document.getElementById('chatDrawerClose');
+  var voiceBtn    = document.getElementById('voiceBtn');
 
-  // ----- Drawer -----
+  var SESSION_KEY = 'chatSubscriber';
+
+  // ===== LANGUAGE =====
+  function getLang() {
+    return document.documentElement.getAttribute('lang') || 'en';
+  }
+
+  // ===== PERSIST SESSION =====
+  function saveSession(user) {
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify(user)); } catch(e) {}
+  }
+
+  function loadSession() {
+    try {
+      var raw = localStorage.getItem(SESSION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch(e) { return null; }
+  }
+
+  function clearSession() {
+    try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
+  }
+
+  // ===== AUTH UI =====
+  function showSignedIn(user) {
+    chatUser = user;
+    authStateGuest.style.display = 'none';
+    authStateSigned.style.display = 'flex';
+    authDisplayName.textContent = user.name || 'مستخدم';
+    authDisplayEmail.textContent = user.email || '';
+    if (user.photo) {
+      authAvatarWrap.innerHTML = '<img src="' + user.photo + '" style="width:46px;height:46px;border-radius:50%;object-fit:cover;" onerror="this.parentNode.textContent=\'👤\'">';
+    } else {
+      authAvatarWrap.textContent = '👤';
+    }
+    drawerName.textContent = user.name || 'مستخدم';
+    if (user.photo) {
+      drawerAvatar.innerHTML = '<img src="' + user.photo + '" style="width:34px;height:34px;border-radius:50%;object-fit:cover;" onerror="this.parentNode.textContent=\'👤\'">';
+    }
+    drawerUserStrip.style.display = 'block';
+  }
+
+  function showGuest() {
+    chatUser = null;
+    authStateGuest.style.display = 'block';
+    authStateSigned.style.display = 'none';
+    drawerUserStrip.style.display = 'none';
+  }
+
+  // ===== ENTER CHAT =====
+  window.enterChat = function() {
+    authGate.style.display = 'none';
+    chatMain.style.display = 'flex';
+    loadConversations();
+    // Apply lang to chat elements
+    applyLanguage(getLang());
+  };
+
+  // ===== GOOGLE SIGN IN =====
+  window.chatGoogleSignIn = function() {
+    authError.style.display = 'none';
+    var provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('email');
+    firebase.auth().signInWithPopup(provider)
+      .then(function(result) {
+        var u = result.user;
+        var user = { uid: u.uid, name: u.displayName || '', email: u.email || '', photo: u.photoURL || '' };
+
+        // Save to Firebase DB as subscriber
+        return firebase.database().ref('subscribers/' + u.uid).set({
+          email: user.email, name: user.name,
+          subscribedAt: Date.now(), lang: getLang()
+        }).then(function() { return user; });
+      })
+      .then(function(user) {
+        saveSession(user);
+        showSignedIn(user);
+      })
+      .catch(function(err) {
+        if (err.code !== 'auth/popup-closed-by-user') {
+          authError.textContent = getLang() === 'ar' ? 'فشل تسجيل الدخول. حاول مرة أخرى.' : 'Sign-in failed. Please try again.';
+          authError.style.display = 'block';
+        }
+      });
+  };
+
+  // ===== SIGN OUT =====
+  window.chatSignOut = function() {
+    firebase.auth().signOut().then(function() {
+      clearSession();
+      showGuest();
+    });
+  };
+
+  // ===== CHECK FIREBASE AUTH STATE + SESSION RESTORE =====
+  firebase.auth().onAuthStateChanged(function(firebaseUser) {
+    if (firebaseUser) {
+      var user = {
+        uid: firebaseUser.uid,
+        name: firebaseUser.displayName || '',
+        email: firebaseUser.email || '',
+        photo: firebaseUser.photoURL || ''
+      };
+      saveSession(user);
+      showSignedIn(user);
+      // If already entered chat, stay there
+      if (chatMain.style.display === 'flex') return;
+    } else {
+      // Try restoring from localStorage
+      var saved = loadSession();
+      if (saved) {
+        showSignedIn(saved);
+      } else {
+        showGuest();
+      }
+    }
+  });
+
+  // Check localStorage immediately for instant restore (no flash)
+  (function() {
+    var saved = loadSession();
+    if (saved) {
+      showSignedIn(saved);
+    }
+  })();
+
+  // ===== DRAWER =====
   function openDrawer() {
     drawer.classList.add('open');
     overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
     loadConversations();
   }
-
   function closeDrawer() {
     drawer.classList.remove('open');
     overlay.classList.remove('active');
     document.body.style.overflow = '';
   }
-
   menuBtn.addEventListener('click', openDrawer);
   drawerClose.addEventListener('click', closeDrawer);
   overlay.addEventListener('click', closeDrawer);
 
-  // ----- Language-aware welcome & prompts -----
-  function getLang() {
-    return document.documentElement.getAttribute('lang') || 'en';
-  }
-
+  // ===== PROMPT TEXT =====
   function getPromptText(btn) {
     var lang = getLang();
     return lang === 'ar'
@@ -128,18 +349,56 @@
       : (btn.getAttribute('data-prompt-en') || btn.getAttribute('data-prompt-ar'));
   }
 
-  // ----- Messages -----
+  // ===== TTS =====
+  function speak(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    var utter = new SpeechSynthesisUtterance(text);
+    var lang = getLang();
+    utter.lang = lang === 'ar' ? 'ar-SA' : 'en-US';
+    utter.rate = 1.0;
+    currentTtsUtterance = utter;
+    window.speechSynthesis.speak(utter);
+    return utter;
+  }
+
+  // ===== MESSAGES =====
   function appendMessage(role, text, actions) {
-    // Remove welcome block on first message
     var welcome = messages.querySelector('.chat-welcome');
     if (welcome) welcome.remove();
 
     var wrap = document.createElement('div');
     wrap.className = 'chat-bubble-wrap ' + role;
+
     var bubble = document.createElement('div');
     bubble.className = 'chat-bubble ' + role;
     bubble.innerText = text;
     wrap.appendChild(bubble);
+
+    // TTS button for bot messages
+    if (role === 'bot') {
+      var ttsBtn = document.createElement('button');
+      ttsBtn.className = 'bubble-tts-btn';
+      ttsBtn.innerHTML = '🔊 <span>' + (getLang() === 'ar' ? 'استمع' : 'Listen') + '</span>';
+      var speaking = false;
+      ttsBtn.addEventListener('click', function() {
+        if (speaking) {
+          window.speechSynthesis.cancel();
+          speaking = false;
+          ttsBtn.classList.remove('speaking');
+          return;
+        }
+        speaking = true;
+        ttsBtn.classList.add('speaking');
+        var utter = speak(text);
+        if (utter) {
+          utter.onend = function() { speaking = false; ttsBtn.classList.remove('speaking'); };
+          utter.onerror = function() { speaking = false; ttsBtn.classList.remove('speaking'); };
+        }
+      });
+      wrap.appendChild(ttsBtn);
+    }
+
     messages.appendChild(wrap);
 
     if (actions && actions.length) {
@@ -185,20 +444,19 @@
       '<div class="chat-welcome-icon">🤖</div>' +
       '<div class="chat-welcome-text">' +
       (lang === 'ar'
-        ? 'مرحباً! أنا وكيل التسوق الذكي. أستطيع مساعدتك في إيجاد المنتجات والتصفح والدفع.'
-        : 'Hello! I\'m your AI shopping assistant. I can help you find products, browse categories, or guide you through checkout.') +
+        ? 'مرحباً! أنا وكيلك الذكي المدعوم بـ Gemini. اسألني عن أي منتج أو سعر أو طلب.'
+        : "Hello! I'm your AI shopping assistant powered by Gemini. Ask me anything!") +
       '</div>';
     messages.appendChild(welcome);
   }
 
-  // ----- Conversations -----
+  // ===== CONVERSATIONS =====
   async function loadConversations() {
     try {
       var resp = await fetch('/api/chat/conversations');
       var list = await resp.json();
       convList.innerHTML = '';
       var lang = getLang();
-
       if (!list.length) {
         var empty = document.createElement('div');
         empty.className = 'conversation-empty';
@@ -206,18 +464,12 @@
         convList.appendChild(empty);
         return;
       }
-
       list.forEach(function(conv) {
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'conv-item' + (conv.id === currentConversationId ? ' active' : '');
-        btn.innerHTML =
-          '<span class="conv-icon">💬</span>' +
-          '<span class="conv-title">' + (conv.title || (lang === 'ar' ? 'محادثة' : 'Chat')) + '</span>';
-        btn.addEventListener('click', function() {
-          openConversation(conv.id);
-          closeDrawer();
-        });
+        btn.innerHTML = '<span class="conv-icon">💬</span><span class="conv-title">' + (conv.title || 'Chat') + '</span>';
+        btn.addEventListener('click', function() { openConversation(conv.id); closeDrawer(); });
         convList.appendChild(btn);
       });
     } catch(e) {}
@@ -231,7 +483,6 @@
       chatHistory.length = 0;
       messages.innerHTML = '';
       var lang = getLang();
-
       if (!data.messages || !data.messages.length) {
         appendMessage('bot', lang === 'ar' ? 'محادثة جديدة. كيف أساعدك؟' : 'New conversation. How can I help?');
       } else {
@@ -243,27 +494,24 @@
     } catch(e) {}
   }
 
-  // ----- Send -----
+  // ===== SEND =====
   async function sendMessage(text) {
     var msg = text.trim();
     if (!msg) return;
-
     appendMessage('user', msg);
     chatHistory.push({ role: 'user', content: msg });
     input.value = '';
     appendTyping();
-
     try {
       var resp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: msg,
-          history: chatHistory.slice(-8),
+          history: chatHistory.slice(-10),
           conversation_id: currentConversationId
         })
       });
-
       if (!resp.ok) throw new Error('error');
       var data = await resp.json();
       currentConversationId = data.conversation_id;
@@ -277,7 +525,148 @@
     }
   }
 
-  // ----- Events -----
+  // ===== VOICE RECORDING =====
+  voiceBtn.addEventListener('click', function() {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  });
+
+  function startRecording() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert(getLang() === 'ar' ? 'متصفحك لا يدعم تسجيل الصوت.' : 'Your browser does not support voice recording.');
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(function(stream) {
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.addEventListener('dataavailable', function(e) {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        });
+        mediaRecorder.addEventListener('stop', function() {
+          var blob = new Blob(audioChunks, { type: 'audio/webm' });
+          transcribeAudio(blob);
+          stream.getTracks().forEach(function(t) { t.stop(); });
+        });
+        mediaRecorder.start();
+        isRecording = true;
+        voiceBtn.classList.add('recording');
+        voiceBtn.title = getLang() === 'ar' ? 'إيقاف التسجيل' : 'Stop recording';
+        voiceBtn.textContent = '⏹️';
+      })
+      .catch(function() {
+        alert(getLang() === 'ar' ? 'لا يمكن الوصول إلى الميكروفون.' : 'Microphone access denied.');
+      });
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      isRecording = false;
+      voiceBtn.classList.remove('recording');
+      voiceBtn.title = getLang() === 'ar' ? 'تسجيل صوتي' : 'Record voice';
+      voiceBtn.textContent = '🎙️';
+    }
+  }
+
+  function transcribeAudio(blob) {
+    // Use Web Speech API (SpeechRecognition) for transcription in browser
+    // For the audio blob approach, we use a fallback: ask user to use live speech recognition
+    // We use the Web Speech API directly for better compatibility
+    input.value = getLang() === 'ar' ? '⏳ جارٍ التحويل...' : '⏳ Transcribing...';
+    input.disabled = true;
+
+    // Use Gemini Flash for transcription via server if possible,
+    // else fall back to browser SpeechRecognition API
+    var formData = new FormData();
+    formData.append('audio', blob, 'recording.webm');
+    formData.append('lang', getLang());
+
+    fetch('/api/transcribe', { method: 'POST', body: formData })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        input.value = data.text || '';
+        input.disabled = false;
+        input.focus();
+        if (data.text) sendMessage(data.text);
+      })
+      .catch(function() {
+        // Fallback: clear and let user type
+        input.value = '';
+        input.disabled = false;
+        input.focus();
+        // Try browser STT as fallback
+        tryBrowserSTT();
+      });
+  }
+
+  function tryBrowserSTT() {
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      input.placeholder = getLang() === 'ar' ? 'اكتب رسالتك هنا...' : 'Type your message...';
+      return;
+    }
+    var recog = new SpeechRecognition();
+    recog.lang = getLang() === 'ar' ? 'ar-SA' : 'en-US';
+    recog.interimResults = false;
+    recog.maxAlternatives = 1;
+    recog.onresult = function(event) {
+      var transcript = event.results[0][0].transcript;
+      input.value = transcript;
+      sendMessage(transcript);
+    };
+    recog.onerror = function() {};
+    recog.start();
+  }
+
+  // ===== LIVE SPEECH (hold to talk alternative using SpeechRecognition API directly) =====
+  // On mobile, use SpeechRecognition directly instead of MediaRecorder
+  (function() {
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!navigator.mediaDevices && SpeechRecognition) {
+      // Override voice btn to use browser STT directly
+      voiceBtn.onclick = null;
+      voiceBtn.addEventListener('click', function() {
+        if (isRecording) {
+          isRecording = false;
+          voiceBtn.classList.remove('recording');
+          voiceBtn.textContent = '🎙️';
+          return;
+        }
+        var recog = new SpeechRecognition();
+        recog.lang = getLang() === 'ar' ? 'ar-SA' : 'en-US';
+        recog.interimResults = false;
+        recog.maxAlternatives = 1;
+        isRecording = true;
+        voiceBtn.classList.add('recording');
+        voiceBtn.textContent = '⏹️';
+        recog.onresult = function(event) {
+          var transcript = event.results[0][0].transcript;
+          isRecording = false;
+          voiceBtn.classList.remove('recording');
+          voiceBtn.textContent = '🎙️';
+          input.value = transcript;
+          sendMessage(transcript);
+        };
+        recog.onerror = function() {
+          isRecording = false;
+          voiceBtn.classList.remove('recording');
+          voiceBtn.textContent = '🎙️';
+        };
+        recog.onend = function() {
+          isRecording = false;
+          voiceBtn.classList.remove('recording');
+          voiceBtn.textContent = '🎙️';
+        };
+        recog.start();
+      });
+    }
+  })();
+
+  // ===== EVENTS =====
   form.addEventListener('submit', function(e) {
     e.preventDefault();
     sendMessage(input.value);
@@ -299,13 +688,10 @@
     } catch(e) {}
   });
 
-  // Keyboard shortcut: Escape closes drawer
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeDrawer();
   });
 
-  // Load conversations on page load (for drawer)
-  loadConversations();
 })();
 </script>
 
