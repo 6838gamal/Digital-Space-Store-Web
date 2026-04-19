@@ -611,32 +611,53 @@ html[dir="rtl"] .sd-admin-lock {
 
 /* ── BOTTOM NAV BAR ────────────────────────── */
 .bottom-bar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 70px !important;
   background: var(--bar-bg) !important;
   border-top: 1px solid var(--bar-border) !important;
-  box-shadow: 0 -2px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 -2px 16px rgba(0,0,0,0.10);
+  z-index: 9998 !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 80px 1fr 1fr !important;
+  align-items: center !important;
 }
 
 .nav-item {
   color: var(--bar-text) !important;
   text-decoration: none !important;
   transition: color 0.2s;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px;
+  padding: 4px 0;
 }
 
-.nav-item p {
+/* Force text labels to always show */
+.nav-item p,
+.bottom-bar .nav-item p {
+  display: block !important;
   color: var(--bar-text) !important;
-  margin: 2px 0 0;
-  font-size: 11px;
-  font-weight: 500;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
 }
 
 .nav-item span {
-  font-size: 20px;
-  line-height: 1;
+  font-size: 20px !important;
+  line-height: 1 !important;
 }
 
 .nav-item:hover,
 .nav-item.active {
   color: var(--bar-text-act) !important;
+  text-decoration: none !important;
 }
 
 .nav-item:hover p,
@@ -644,10 +665,57 @@ html[dir="rtl"] .sd-admin-lock {
   color: var(--bar-text-act) !important;
 }
 
+/* Center cart slot */
+.bottom-bar .center {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.add-btn {
+  background: linear-gradient(135deg, #38bdf8, #6366f1) !important;
+  border: none !important;
+  border-radius: 50% !important;
+  width: 58px !important;
+  height: 58px !important;
+  color: #fff !important;
+  font-size: 26px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.28) !important;
+  transition: transform 0.2s !important;
+  position: relative !important;
+  top: -18px !important;
+}
+
+.add-btn:hover { transform: scale(1.1) !important; }
+.add-btn:active { transform: scale(0.95) !important; }
+
 /* ── FAB ───────────────────────────────────── */
 #fab {
-  z-index: 9997 !important;
-  bottom: 80px !important;
+  position: fixed !important;
+  bottom: 82px !important;
+  right: 16px !important;
+  width: 60px !important;
+  height: 60px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #ff6a00, #ee0979) !important;
+  color: #fff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 26px !important;
+  text-decoration: none !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.32) !important;
+  z-index: 99998 !important;
+  transition: transform 0.25s ease !important;
+}
+
+#fab:hover {
+  transform: scale(1.1) !important;
+  text-decoration: none !important;
 }
 
 html[dir="rtl"] #fab {

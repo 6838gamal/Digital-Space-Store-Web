@@ -57,7 +57,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 5000
   - `data-en` / `data-ar` attributes + `data-trans` keys for dynamic content
 - **Bottom nav bar**: Theme-aware via CSS variables (`--bar-bg`, `--bar-text`, `--bar-text-act`)
   - Overrides footer.css hardcoded colors in theme.css with `!important`
-- **Admin modal**: Password `admin2024`, slides in from top with shake animation on error
+- **Admin modal**: Password `111`, slides in from top with shake animation on error
 - **FAB**: Robot icon links to `/chat`, always above bottom bar
 
 ## Key CSS Architecture
