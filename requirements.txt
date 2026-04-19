@@ -19,3 +19,11 @@ python-dotenv
 python-multipart
 sqlalchemy
 uvicorn
+fastapi
+itsdangerous
+jinja2
+psycopg2-binary
+python-dotenv
+python-multipart
+sqlalchemy
+uvicorn
