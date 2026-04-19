@@ -400,6 +400,14 @@ function subscribeWithGoogle() {
       var uid   = user.uid;
       var email = user.email;
       var name  = user.displayName || '';
+      var photo = user.photoURL || '';
+
+      // Save to chatSubscriber localStorage so chat page recognises user instantly
+      try {
+        localStorage.setItem('chatSubscriber', JSON.stringify({
+          uid: uid, name: name, email: email, photo: photo
+        }));
+      } catch(e) {}
 
       return firebase.database().ref('subscribers/' + uid).set({
         email:        email,
@@ -452,6 +460,32 @@ document.addEventListener('DOMContentLoaded', function() {
   applyLanguage(lang);
   applyTheme(theme);
 });
+
+// ===== AUTO-UPDATE FOOTER SUBSCRIBE STATE =====
+// If user is already signed in (returning visitor), show "Subscribed" in footer
+if (typeof firebase !== 'undefined' && firebase.auth) {
+  firebase.auth().onAuthStateChanged(function(user) {
+    var pre  = document.getElementById('subscribe-state-pre');
+    var post = document.getElementById('subscribe-state-post');
+    if (!pre || !post) return;
+    if (user) {
+      pre.style.display  = 'none';
+      post.style.display = 'flex';
+      // Also save to chatSubscriber if not already set
+      try {
+        if (!localStorage.getItem('chatSubscriber')) {
+          localStorage.setItem('chatSubscriber', JSON.stringify({
+            uid: user.uid, name: user.displayName || '',
+            email: user.email || '', photo: user.photoURL || ''
+          }));
+        }
+      } catch(e) {}
+    } else {
+      pre.style.display  = 'block';
+      post.style.display = 'none';
+    }
+  });
+}
 </script>
 
 </body>

@@ -304,24 +304,30 @@
       };
       saveSession(user);
       showSignedIn(user);
-      // If already entered chat, stay there
-      if (chatMain.style.display === 'flex') return;
+      // Auto-enter chat without needing any button press
+      if (authGate.style.display !== 'none') {
+        enterChat();
+      }
     } else {
       // Try restoring from localStorage
       var saved = loadSession();
       if (saved) {
         showSignedIn(saved);
+        if (authGate.style.display !== 'none') {
+          enterChat();
+        }
       } else {
         showGuest();
       }
     }
   });
 
-  // Check localStorage immediately for instant restore (no flash)
+  // Immediate localStorage restore — enter chat instantly with no flash
   (function() {
     var saved = loadSession();
     if (saved) {
       showSignedIn(saved);
+      enterChat();
     }
   })();
 
