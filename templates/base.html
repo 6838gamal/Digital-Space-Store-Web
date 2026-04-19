@@ -91,9 +91,10 @@
       ⏳ <span data-en="Signing in..." data-ar="جارٍ التسجيل...">Signing in...</span>
     </div>
 
-    <!-- Hidden form for server session creation -->
+    <!-- Hidden form for server session creation (fields filled by JS after Firebase auth) -->
     <form id="adminDemoLoginForm" action="/admin/demo-login" method="POST" style="display:none;">
-      <input type="text" name="username" value="admin">
+      <input type="hidden" id="adminFormEmail" name="admin_email" value="">
+      <input type="hidden" id="adminFormName"  name="admin_name"  value="">
     </form>
   </div>
 </div>
@@ -344,8 +345,11 @@ function submitAdminPassword() {
 
   // Firebase email/password sign-in
   firebase.auth().signInWithEmailAndPassword(email, password)
-    .then(function() {
-      // Server session
+    .then(function(cred) {
+      // Pass Firebase user info to server for session creation
+      var user = cred.user;
+      document.getElementById('adminFormEmail').value = user.email || email;
+      document.getElementById('adminFormName').value  = user.displayName || 'مدير المتجر';
       document.getElementById('adminDemoLoginForm').submit();
     })
     .catch(function(error) {

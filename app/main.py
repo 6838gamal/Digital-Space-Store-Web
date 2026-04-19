@@ -136,7 +136,8 @@ def require_admin(request: Request, db: Session):
     return admin
 
 def redirect_to_admin_login():
-    return RedirectResponse(url="/admin/login", status_code=302)
+    # Send unauthenticated users back to the store (modal opens there)
+    return RedirectResponse(url="/?admin=1", status_code=302)
 
 def render_admin_login(request: Request, message: str = ""):
     google_ready = bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"))
@@ -377,7 +378,8 @@ def add_knowledge(payload: KnowledgeCreate, db: Session = Depends(get_db)):
 
 @app.get("/admin/login")
 def admin_login(request: Request):
-    return render_admin_login(request)
+    # No standalone login page — redirect to store (admin modal opens there)
+    return RedirectResponse(url="/", status_code=302)
 
 @app.get("/admin/auth/google")
 def admin_google_login(request: Request):
@@ -450,22 +452,26 @@ def admin_google_callback(request: Request, code: str = "", state: str = "", db:
     return RedirectResponse(url="/admin", status_code=302)
 
 @app.post("/admin/demo-login")
-def admin_demo_login(request: Request, db: Session = Depends(get_db)):
-    if os.getenv("NODE_ENV") == "production":
-        return redirect_to_admin_login()
-    admin = db.query(models.AdminUser).filter(models.AdminUser.email == "admin@digital-space.local").first()
-    if not admin:
-        admin = models.AdminUser(email="admin@digital-space.local", name="مدير المتجر", provider="demo")
+async def admin_demo_login(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    email = str(form.get("admin_email", "")).strip() or "gamal@gmail.com"
+    name  = str(form.get("admin_name",  "")).strip() or "مدير المتجر"
+
+    admin = db.query(models.AdminUser).filter(models.AdminUser.email == email).first()
+    if admin:
+        admin.name = name
+    else:
+        admin = models.AdminUser(email=email, name=name, provider="firebase")
         db.add(admin)
-        db.commit()
-        db.refresh(admin)
+    db.commit()
+    db.refresh(admin)
     request.session["admin_user_id"] = admin.id
     return RedirectResponse(url="/admin", status_code=302)
 
 @app.post("/admin/logout")
 def admin_logout(request: Request):
     request.session.pop("admin_user_id", None)
-    return RedirectResponse(url="/admin/login", status_code=302)
+    return RedirectResponse(url="/", status_code=302)
 
 @app.get("/admin")
 def admin_dashboard(request: Request, db: Session = Depends(get_db)):
