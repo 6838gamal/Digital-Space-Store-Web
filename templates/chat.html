@@ -266,16 +266,16 @@
       .then(function(result) {
         var u = result.user;
         var user = { uid: u.uid, name: u.displayName || '', email: u.email || '', photo: u.photoURL || '' };
-
-        // Save to Firebase DB as subscriber
-        return firebase.database().ref('subscribers/' + u.uid).set({
-          email: user.email, name: user.name,
-          subscribedAt: Date.now(), lang: getLang()
-        }).then(function() { return user; });
-      })
-      .then(function(user) {
         saveSession(user);
         showSignedIn(user);
+
+        // Try to save to Firebase DB as subscriber (non-blocking — don't fail if denied)
+        try {
+          firebase.database().ref('subscribers/' + u.uid).set({
+            email: user.email, name: user.name,
+            subscribedAt: Date.now(), lang: getLang()
+          }).catch(function() {});
+        } catch(e) {}
       })
       .catch(function(err) {
         if (err.code !== 'auth/popup-closed-by-user') {
