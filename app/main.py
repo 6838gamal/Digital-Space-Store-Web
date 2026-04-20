@@ -382,6 +382,12 @@ def admin_login(request: Request):
     # No standalone login page — redirect to store (admin modal opens there)
     return RedirectResponse(url="/", status_code=302)
 
+def build_google_redirect_uri(request: Request) -> str:
+    uri = str(request.url_for("admin_google_callback"))
+    if uri.startswith("http://"):
+        uri = "https://" + uri[7:]
+    return uri
+
 @app.get("/admin/auth/google")
 def admin_google_login(request: Request):
     client_id = os.getenv("GOOGLE_CLIENT_ID")
@@ -390,7 +396,7 @@ def admin_google_login(request: Request):
         return render_admin_login(request, "تسجيل Google غير مفعّل بعد. أضف بيانات OAuth لتفعيله.")
     state = secrets.token_urlsafe(24)
     request.session["google_oauth_state"] = state
-    redirect_uri = str(request.url_for("admin_google_callback"))
+    redirect_uri = build_google_redirect_uri(request)
     query = urlencode({
         "client_id": client_id,
         "redirect_uri": redirect_uri,
@@ -409,7 +415,7 @@ def admin_google_callback(request: Request, code: str = "", state: str = "", db:
 
     client_id = os.getenv("GOOGLE_CLIENT_ID")
     client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
-    redirect_uri = str(request.url_for("admin_google_callback"))
+    redirect_uri = build_google_redirect_uri(request)
     token_payload = urlencode({
         "client_id": client_id,
         "client_secret": client_secret,
