@@ -29,3 +29,13 @@ sqlalchemy
 uvicorn
 google-generativeai
 google-genai
+fastapi
+google-genai
+google-generativeai
+itsdangerous
+jinja2
+psycopg2-binary
+python-dotenv
+python-multipart
+SQLAlchemy
+uvicorn
