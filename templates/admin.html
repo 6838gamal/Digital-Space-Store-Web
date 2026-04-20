@@ -1,402 +1,1229 @@
 {% extends "base.html" %}
 {% block content %}
-<main class="admin-page" dir="rtl">
+<style>
+/* ============================
+   ADMIN LAYOUT
+============================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+.admin-wrap {
+  display: flex;
+  min-height: 100vh;
+  background: #0a0f1e;
+  color: #e2e8f0;
+  direction: rtl;
+  font-family: 'Poppins', 'Noto Sans Arabic', sans-serif;
+}
+
+/* ============================
+   SIDEBAR
+============================ */
+.adm-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: #06091a;
+  border-left: 1px solid rgba(148,163,184,.1);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+}
+
+.adm-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 18px 18px;
+  border-bottom: 1px solid rgba(148,163,184,.08);
+}
+.adm-brand-icon { font-size: 30px; }
+.adm-brand-name { font-weight: 700; font-size: 15px; color: #f1f5f9; }
+.adm-brand-sub { font-size: 11px; color: #64748b; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+
+.adm-nav { display: flex; flex-direction: column; gap: 3px; padding: 14px 12px; flex: 1; }
+.adm-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all .18s;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: right;
+}
+.adm-nav-item:hover { background: #0f1a33; color: #e2e8f0; }
+.adm-nav-item.active { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: #fff; font-weight: 600; box-shadow: 0 4px 14px rgba(37,99,235,.3); }
+.adm-nav-icon { font-size: 17px; flex-shrink: 0; }
+.adm-nav-badge { margin-right: auto; background: rgba(37,99,235,.25); color: #93c5fd; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 99px; }
+
+.adm-sidebar-bottom { border-top: 1px solid rgba(148,163,184,.08); padding: 12px; display: flex; flex-direction: column; gap: 3px; }
+.adm-logout-btn {
+  display: flex; align-items: center; gap: 11px; padding: 11px 14px;
+  border-radius: 12px; color: #f87171; background: none; border: none;
+  width: 100%; cursor: pointer; font-size: 14px; font-weight: 500; transition: all .18s;
+}
+.adm-logout-btn:hover { background: rgba(248,113,113,.1); }
+
+/* Mobile hamburger */
+.adm-topbar {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: #06091a;
+  border-bottom: 1px solid rgba(148,163,184,.1);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+.adm-hamburger {
+  width: 38px; height: 38px; background: none; border: none;
+  display: flex; flex-direction: column; justify-content: center; gap: 5px;
+  cursor: pointer; padding: 6px; border-radius: 8px;
+}
+.adm-hamburger span { display: block; height: 2px; background: #94a3b8; border-radius: 99px; transition: all .2s; }
+.adm-topbar-title { font-weight: 700; font-size: 16px; color: #f1f5f9; flex: 1; text-align: center; }
+
+.adm-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.6);
+  z-index: 200;
+  backdrop-filter: blur(2px);
+}
+.adm-overlay.open { display: block; }
+
+/* ============================
+   MAIN CONTENT
+============================ */
+.adm-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-content {
+  flex: 1;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.adm-section { display: none; flex-direction: column; gap: 20px; }
+.adm-section.active { display: flex; }
+
+.adm-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.adm-page-title { font-size: 22px; font-weight: 800; color: #f1f5f9; }
+.adm-page-sub { font-size: 13px; color: #64748b; margin-top: 2px; }
+
+/* ============================
+   CARDS
+============================ */
+.adm-card {
+  background: #0d1526;
+  border: 1px solid rgba(148,163,184,.12);
+  border-radius: 20px;
+  padding: 22px;
+}
+.adm-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.adm-card-title { font-size: 15px; font-weight: 700; color: #e2e8f0; }
+.adm-card-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+/* ============================
+   STAT CARDS
+============================ */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.stat-card {
+  background: #0d1526;
+  border: 1px solid rgba(148,163,184,.12);
+  border-radius: 16px;
+  padding: 20px 16px;
+  text-align: center;
+  transition: border-color .2s;
+}
+.stat-card:hover { border-color: rgba(37,99,235,.4); }
+.stat-icon { font-size: 26px; margin-bottom: 8px; }
+.stat-value { font-size: 28px; font-weight: 800; color: #f1f5f9; line-height: 1; }
+.stat-label { font-size: 12px; color: #64748b; margin-top: 6px; font-weight: 500; }
+
+/* ============================
+   TABLE
+============================ */
+.adm-table-wrap { overflow-x: auto; border-radius: 14px; }
+table.adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.adm-table th {
+  padding: 11px 14px;
+  text-align: right;
+  font-weight: 600;
+  color: #64748b;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  background: #0a0f1e;
+  border-bottom: 1px solid rgba(148,163,184,.1);
+  white-space: nowrap;
+}
+table.adm-table td {
+  padding: 12px 14px;
+  color: #cbd5e1;
+  border-bottom: 1px solid rgba(148,163,184,.06);
+  vertical-align: middle;
+}
+table.adm-table tr:last-child td { border-bottom: none; }
+table.adm-table tr:hover td { background: rgba(255,255,255,.025); }
+.adm-empty { text-align: center; padding: 40px; color: #475569; font-size: 14px; }
+.adm-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.adm-badge-green { background: rgba(74,222,128,.12); color: #4ade80; }
+.adm-badge-red   { background: rgba(248,113,113,.12); color: #f87171; }
+.adm-badge-blue  { background: rgba(96,165,250,.12);  color: #60a5fa; }
+.adm-badge-gray  { background: rgba(148,163,184,.12); color: #94a3b8; }
+
+/* ============================
+   BUTTONS
+============================ */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; transition: all .18s; text-decoration: none; white-space: nowrap;
+}
+.btn-primary { background: #2563eb; color: #fff; }
+.btn-primary:hover { background: #1d4ed8; box-shadow: 0 4px 14px rgba(37,99,235,.4); }
+.btn-danger  { background: rgba(248,113,113,.12); color: #f87171; border: 1px solid rgba(248,113,113,.2); }
+.btn-danger:hover  { background: rgba(248,113,113,.22); }
+.btn-secondary { background: rgba(148,163,184,.1); color: #e2e8f0; border: 1px solid rgba(148,163,184,.15); }
+.btn-secondary:hover { background: rgba(148,163,184,.18); }
+.btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+.btn-icon { width: 32px; height: 32px; padding: 0; justify-content: center; border-radius: 8px; }
+
+/* ============================
+   FORMS (in modals)
+============================ */
+.adm-form { display: flex; flex-direction: column; gap: 14px; }
+.adm-field { display: flex; flex-direction: column; gap: 5px; }
+.adm-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.adm-label { font-size: 12px; font-weight: 600; color: #94a3b8; }
+.adm-input, .adm-select, .adm-textarea {
+  background: #0a0f1e;
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 10px;
+  padding: 10px 13px;
+  color: #e2e8f0;
+  font-size: 14px;
+  font-family: inherit;
+  width: 100%;
+  outline: none;
+  transition: border-color .18s;
+}
+.adm-input:focus, .adm-select:focus, .adm-textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+}
+.adm-textarea { min-height: 110px; resize: vertical; }
+.adm-check-row { display: flex; align-items: center; gap: 9px; }
+.adm-check-row input[type=checkbox] { width: 16px; height: 16px; accent-color: #2563eb; }
+.adm-check-row label { font-size: 13px; color: #cbd5e1; cursor: pointer; }
+
+/* ============================
+   MODAL
+============================ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(4px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .22s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-box {
+  background: #0d1526;
+  border: 1px solid rgba(148,163,184,.15);
+  border-radius: 22px;
+  padding: 28px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(20px);
+  transition: transform .22s;
+}
+.modal-overlay.open .modal-box { transform: translateY(0); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+.modal-title { font-size: 17px; font-weight: 700; color: #f1f5f9; }
+.modal-close { background: none; border: none; color: #64748b; font-size: 22px; cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: color .15s; }
+.modal-close:hover { color: #e2e8f0; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+/* ============================
+   DATASOURCE & PUBLISH CARDS
+============================ */
+.ds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.ds-card {
+  background: #0a0f1e;
+  border: 1px solid rgba(148,163,184,.12);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color .2s;
+}
+.ds-card:hover { border-color: rgba(37,99,235,.3); }
+.ds-icon { font-size: 28px; }
+.ds-name { font-weight: 700; font-size: 14px; color: #f1f5f9; }
+.ds-desc { font-size: 12px; color: #64748b; line-height: 1.6; }
+.ds-status { font-size: 12px; padding: 6px 10px; border-radius: 8px; font-weight: 600; }
+.ds-active { background: rgba(74,222,128,.1); color: #4ade80; }
+.ds-form { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+
+/* ============================
+   PRODUCT CARD (in table)
+============================ */
+.product-img {
+  width: 42px; height: 42px; border-radius: 8px;
+  object-fit: cover; background: #1e293b;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+
+/* ============================
+   KNOWLEDGE ITEM
+============================ */
+.kb-preview { font-size: 12px; color: #64748b; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.5; }
+
+/* ============================
+   CONFIRM DIALOG
+============================ */
+.confirm-box {
+  max-width: 380px;
+  text-align: center;
+  padding: 32px 28px;
+}
+.confirm-icon { font-size: 44px; margin-bottom: 14px; }
+.confirm-msg { font-size: 15px; color: #cbd5e1; line-height: 1.6; margin-bottom: 6px; }
+.confirm-sub { font-size: 13px; color: #64748b; }
+.confirm-actions { display: flex; justify-content: center; gap: 12px; margin-top: 22px; }
+
+/* ============================
+   RESPONSIVE
+============================ */
+@media (max-width: 768px) {
+  .adm-topbar { display: flex; }
+  .adm-sidebar {
+    position: fixed;
+    right: 0; top: 0;
+    height: 100vh;
+    z-index: 300;
+    transform: translateX(100%);
+    width: 280px;
+  }
+  .adm-sidebar.open { transform: translateX(0); }
+  .adm-content { padding: 16px; }
+  .adm-field-row { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .adm-page-header { flex-direction: column; align-items: flex-start; }
+  table.adm-table th, table.adm-table td { padding: 10px 10px; }
+}
+</style>
+
+<!-- Mobile Topbar -->
+<div class="adm-topbar">
+  <button class="adm-hamburger" id="admHamburger" aria-label="القائمة">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="adm-topbar-title">لوحة الإدارة</div>
+  <a href="/chat" style="background:rgba(37,99,235,.15);border-radius:10px;padding:7px 12px;font-size:12px;font-weight:600;color:#60a5fa;text-decoration:none;">💬 الوكيل</a>
+</div>
+
+<!-- Sidebar Overlay -->
+<div class="adm-overlay" id="admOverlay"></div>
+
+<div class="admin-wrap">
 
   <!-- ===== SIDEBAR ===== -->
-  <aside class="admin-sidebar">
-    <div class="admin-sidebar-brand">
-      <div class="admin-brand-icon">⚙️</div>
+  <aside class="adm-sidebar" id="admSidebar">
+    <div class="adm-brand">
+      <div class="adm-brand-icon">⚙️</div>
       <div>
-        <div class="admin-brand-name">لوحة الإدارة</div>
-        <div class="admin-brand-user">{{ admin.name }}</div>
+        <div class="adm-brand-name">لوحة الإدارة</div>
+        <div class="adm-brand-sub">{{ admin.name }}</div>
       </div>
     </div>
 
-    <nav class="admin-nav">
-      <a href="#" class="admin-nav-item active" data-section="stats">
-        <span class="admin-nav-icon">📊</span>
+    <nav class="adm-nav">
+      <a href="#" class="adm-nav-item active" data-section="stats">
+        <span class="adm-nav-icon">📊</span>
         <span>الإحصائيات</span>
       </a>
-      <a href="#" class="admin-nav-item" data-section="products">
-        <span class="admin-nav-icon">📦</span>
+      <a href="#" class="adm-nav-item" data-section="products">
+        <span class="adm-nav-icon">📦</span>
         <span>المنتجات</span>
+        <span class="adm-nav-badge">{{ products | length }}</span>
       </a>
-      <a href="#" class="admin-nav-item" data-section="participants">
-        <span class="admin-nav-icon">👥</span>
+      <a href="#" class="adm-nav-item" data-section="participants">
+        <span class="adm-nav-icon">👥</span>
         <span>المشاركون</span>
+        <span class="adm-nav-badge">{{ participants | length }}</span>
       </a>
-      <a href="#" class="admin-nav-item" data-section="rag">
-        <span class="admin-nav-icon">🤖</span>
+      <a href="#" class="adm-nav-item" data-section="rag">
+        <span class="adm-nav-icon">🤖</span>
         <span>تدريب الوكيل</span>
+        <span class="adm-nav-badge">{{ knowledge_items | length }}</span>
       </a>
-      <a href="#" class="admin-nav-item" data-section="datasource">
-        <span class="admin-nav-icon">📥</span>
-        <span>مصدر البيانات</span>
+      <a href="#" class="adm-nav-item" data-section="datasource">
+        <span class="adm-nav-icon">📥</span>
+        <span>مصادر البيانات</span>
       </a>
-      <a href="#" class="admin-nav-item" data-section="publish">
-        <span class="admin-nav-icon">🚀</span>
-        <span>النشر إلى</span>
+      <a href="#" class="adm-nav-item" data-section="publish">
+        <span class="adm-nav-icon">🚀</span>
+        <span>النشر</span>
       </a>
-      <a href="#" class="admin-nav-item" data-section="admins">
-        <span class="admin-nav-icon">🛡️</span>
+      <a href="#" class="adm-nav-item" data-section="admins">
+        <span class="adm-nav-icon">🛡️</span>
         <span>المشرفون</span>
       </a>
     </nav>
 
-    <div class="admin-sidebar-bottom">
-      <a href="/chat" class="admin-nav-item">
-        <span class="admin-nav-icon">💬</span>
+    <div class="adm-sidebar-bottom">
+      <a href="/chat" class="adm-nav-item">
+        <span class="adm-nav-icon">💬</span>
         <span>شاشة الوكيل</span>
       </a>
+      <a href="/" class="adm-nav-item">
+        <span class="adm-nav-icon">🏪</span>
+        <span>المتجر</span>
+      </a>
       <form method="post" action="/admin/logout" style="margin:0;">
-        <button type="submit" class="admin-logout-btn">
-          <span class="admin-nav-icon">🚪</span>
+        <button type="submit" class="adm-logout-btn">
+          <span class="adm-nav-icon">🚪</span>
           <span>تسجيل الخروج</span>
         </button>
       </form>
     </div>
   </aside>
 
-  <!-- ===== CONTENT ===== -->
-  <section class="admin-content">
+  <!-- ===== MAIN ===== -->
+  <main class="adm-main">
+    <div class="adm-content">
 
-    <!-- ── STATISTICS (default) ── -->
-    <section class="admin-section active" id="section-stats">
-      <div class="admin-section-title">📊 الإحصائيات العامة</div>
-
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon">📦</div>
-          <div class="stat-value">{{ products | length }}</div>
-          <div class="stat-label">إجمالي المنتجات</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">✅</div>
-          <div class="stat-value">{{ products | selectattr('is_active') | list | length }}</div>
-          <div class="stat-label">منتجات نشطة</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">👥</div>
-          <div class="stat-value">{{ participants | length }}</div>
-          <div class="stat-label">الزوار / المشاركون</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">💬</div>
-          <div class="stat-value">{{ conversations | length }}</div>
-          <div class="stat-label">المحادثات</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">🧠</div>
-          <div class="stat-value">{{ knowledge_items | length }}</div>
-          <div class="stat-label">عناصر قاعدة المعرفة</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">🛡️</div>
-          <div class="stat-value">{{ admins | length }}</div>
-          <div class="stat-label">المشرفون</div>
-        </div>
-      </div>
-
-      <div class="admin-card" style="margin-top:22px;">
-        <div class="admin-card-title">آخر المحادثات</div>
-        <div class="admin-table" style="grid-template-columns:1fr 1fr auto;">
-          <div class="admin-table-head">العنوان</div>
-          <div class="admin-table-head">آخر تحديث</div>
-          <div class="admin-table-head">المعرّف</div>
-          {% for conv in conversations %}
-          <div>{{ conv.title[:50] }}</div>
-          <div style="font-size:12px;color:#94a3b8;">{{ conv.updated_at.strftime('%Y-%m-%d %H:%M') if conv.updated_at else '—' }}</div>
-          <div style="font-size:12px;color:#64748b;">#{{ conv.id }}</div>
-          {% else %}
-          <div colspan="3" style="color:#64748b;">لا توجد محادثات بعد.</div>
-          {% endfor %}
-        </div>
-      </div>
-    </section>
-
-    <!-- ── PRODUCTS ── -->
-    <section class="admin-section" id="section-products">
-      <div class="admin-section-title">📦 إدارة المنتجات</div>
-
-      <div class="admin-card">
-        <div class="admin-card-title">إضافة منتج جديد</div>
-        <form class="admin-grid-form" method="post" action="/admin/products">
-          <input name="name" placeholder="اسم المنتج" required>
-          <input name="price" type="number" step="0.01" placeholder="السعر" required>
-          <input name="old_price" type="number" step="0.01" placeholder="السعر القديم">
-          <input name="category" placeholder="التصنيف">
-          <input name="image_url" placeholder="رابط الصورة">
-          <textarea name="description" placeholder="الوصف"></textarea>
-          <label class="admin-check-label"><input type="checkbox" name="is_active" checked> نشط</label>
-          <button type="submit" class="admin-btn-primary">إضافة منتج</button>
-        </form>
-      </div>
-
-      <div class="admin-card">
-        <div class="admin-card-title">المنتجات الحالية ({{ products | length }})</div>
-        <div class="admin-list">
-          {% for product in products %}
-          <div class="admin-row">
-            <form method="post" action="/admin/products/{{ product.id }}" class="admin-edit-form">
-              <input name="name" value="{{ product.name }}" required>
-              <input name="price" type="number" step="0.01" value="{{ product.price }}" required>
-              <input name="old_price" type="number" step="0.01" value="{{ product.old_price or '' }}">
-              <input name="category" value="{{ product.category or '' }}">
-              <input name="image_url" value="{{ product.image_url or '' }}">
-              <textarea name="description">{{ product.description or '' }}</textarea>
-              <label class="admin-check-label"><input type="checkbox" name="is_active" {% if product.is_active %}checked{% endif %}> نشط</label>
-              <button type="submit" class="admin-btn-primary">حفظ</button>
-            </form>
-            <form method="post" action="/admin/products/{{ product.id }}/delete" style="margin-top:8px;">
-              <button type="submit" class="admin-btn-danger">حذف المنتج</button>
-            </form>
+      <!-- ══════════════════════════════
+           STATISTICS
+      ══════════════════════════════ -->
+      <section class="adm-section active" id="section-stats">
+        <div class="adm-page-header">
+          <div>
+            <div class="adm-page-title">📊 نظرة عامة</div>
+            <div class="adm-page-sub">ملخص أداء المتجر والوكيل</div>
           </div>
-          {% endfor %}
         </div>
-      </div>
-    </section>
 
-    <!-- ── PARTICIPANTS ── -->
-    <section class="admin-section" id="section-participants">
-      <div class="admin-section-title">👥 المشاركون في المتجر</div>
-      <div class="admin-card">
-        <div class="admin-card-title">قائمة الزوار ({{ participants | length }})</div>
-        <div class="admin-table" style="grid-template-columns:1fr 1fr 1fr auto;">
-          <div class="admin-table-head">الاسم</div>
-          <div class="admin-table-head">البريد</div>
-          <div class="admin-table-head">آخر ظهور</div>
-          <div class="admin-table-head">المحادثات</div>
-          {% for participant in participants %}
-          <div>{{ participant.display_name }}</div>
-          <div>{{ participant.email or "زائر" }}</div>
-          <div style="font-size:12px;color:#94a3b8;">{{ participant.last_seen_at }}</div>
-          <div>{{ conversations | selectattr("participant_id", "equalto", participant.id) | list | length }}</div>
-          {% else %}
-          <div style="color:#64748b;grid-column:1/-1;">لا يوجد مشاركون بعد.</div>
-          {% endfor %}
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-value">{{ products | length }}</div>
+            <div class="stat-label">إجمالي المنتجات</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value">{{ products | selectattr('is_active') | list | length }}</div>
+            <div class="stat-label">منتجات نشطة</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value">{{ participants | length }}</div>
+            <div class="stat-label">الزوار</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💬</div>
+            <div class="stat-value">{{ conversations | length }}</div>
+            <div class="stat-label">المحادثات</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🧠</div>
+            <div class="stat-value">{{ knowledge_items | length }}</div>
+            <div class="stat-label">قاعدة المعرفة</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🛡️</div>
+            <div class="stat-value">{{ admins | length }}</div>
+            <div class="stat-label">المشرفون</div>
+          </div>
         </div>
-      </div>
-    </section>
 
-    <!-- ── RAG / AGENT TRAINING ── -->
-    <section class="admin-section" id="section-rag">
-      <div class="admin-section-title">🤖 تدريب الوكيل وقاعدة المعرفة</div>
-
-      <div class="admin-card">
-        <div class="admin-card-title">إضافة معلومة جديدة</div>
-        <form class="admin-grid-form" method="post" action="/admin/knowledge">
-          <input name="title" placeholder="عنوان المعلومة" required>
-          <input name="tags" placeholder="وسوم مثل: shipping, offers">
-          <textarea name="content" placeholder="محتوى التدريب" required style="grid-column:1/-1;"></textarea>
-          <button type="submit" class="admin-btn-primary" style="grid-column:1/-1;">إضافة إلى معرفة الوكيل</button>
-        </form>
-      </div>
-
-      <div class="admin-card">
-        <div class="admin-card-title">رفع ملف تدريب</div>
-        <form class="upload-form" method="post" action="/admin/rag/upload" enctype="multipart/form-data">
-          <input type="file" name="file" accept=".txt,.md,.csv,.json" required>
-          <input name="tags" placeholder="وسوم الملف" value="uploaded">
-          <button type="submit" class="admin-btn-primary">رفع ملف</button>
-        </form>
-      </div>
-
-      <div class="admin-card">
-        <div class="admin-card-title">قاعدة المعرفة الحالية ({{ knowledge_items | length }})</div>
-        <div class="admin-list">
-          {% for item in knowledge_items %}
-          <div class="admin-row">
-            <form method="post" action="/admin/knowledge/{{ item.id }}" class="admin-edit-form">
-              <input name="title" value="{{ item.title }}" required>
-              <input name="tags" value="{{ item.tags or '' }}">
-              <textarea name="content" required style="grid-column:1/-1;">{{ item.content }}</textarea>
-              <label class="admin-check-label"><input type="checkbox" name="is_active" {% if item.is_active %}checked{% endif %}> مفعّل في RAG</label>
-              <button type="submit" class="admin-btn-primary">حفظ</button>
-            </form>
-            <form method="post" action="/admin/knowledge/{{ item.id }}/delete" style="margin-top:8px;">
-              <button type="submit" class="admin-btn-danger">حذف</button>
-            </form>
-          </div>
-          {% else %}
-          <p style="color:#64748b;text-align:center;padding:20px;">لا توجد معلومات في قاعدة المعرفة بعد.</p>
-          {% endfor %}
-        </div>
-      </div>
-    </section>
-
-    <!-- ── DATA SOURCE ── -->
-    <section class="admin-section" id="section-datasource">
-      <div class="admin-section-title">📥 مصدر البيانات — من أين أسحب؟</div>
-
-      <div class="admin-card">
-        <div class="admin-card-title">إعداد مصادر الاستيراد</div>
-        <p class="admin-hint">حدد من أين يستورد الوكيل والمتجر البيانات (منتجات، طلبات، مشتركون...).</p>
-        <div class="datasource-grid">
-
-          <div class="datasource-card" id="ds-csv">
-            <div class="datasource-icon">📄</div>
-            <div class="datasource-name">ملف CSV / JSON</div>
-            <div class="datasource-desc">استيراد المنتجات والبيانات من ملف محلي.</div>
-            <form class="upload-form" method="post" action="/admin/rag/upload" enctype="multipart/form-data" style="margin-top:10px;">
-              <input type="file" name="file" accept=".csv,.json,.txt,.md" required>
-              <input name="tags" value="datasource-import" placeholder="وسوم">
-              <button type="submit" class="admin-btn-primary">استيراد</button>
-            </form>
-          </div>
-
-          <div class="datasource-card" id="ds-api">
-            <div class="datasource-icon">🔗</div>
-            <div class="datasource-name">API خارجي</div>
-            <div class="datasource-desc">جلب البيانات من رابط API مباشر.</div>
-            <form class="admin-grid-form" onsubmit="handleApiSource(event)" style="margin-top:10px;grid-template-columns:1fr;">
-              <input id="ds-api-url" placeholder="https://api.example.com/products" type="url">
-              <input id="ds-api-key" placeholder="مفتاح API (اختياري)" type="password">
-              <button type="submit" class="admin-btn-primary">اختبار الاتصال</button>
-            </form>
-            <div id="ds-api-result" style="margin-top:8px;font-size:13px;color:#94a3b8;"></div>
-          </div>
-
-          <div class="datasource-card" id="ds-manual">
-            <div class="datasource-icon">✏️</div>
-            <div class="datasource-name">إدخال يدوي</div>
-            <div class="datasource-desc">أضف البيانات يدوياً عبر نماذج المنتجات أو قاعدة المعرفة.</div>
-            <button class="admin-btn-secondary" style="margin-top:10px;" onclick="switchSection('products')">انتقل إلى المنتجات</button>
-          </div>
-
-        </div>
-      </div>
-
-      <div class="admin-card">
-        <div class="admin-card-title">🤖 تدريب الوكيل على مصادر البيانات</div>
-        <p class="admin-hint">أضف وصفاً لمصادر البيانات لكي يفهمها الوكيل ويجيب عليها بدقة.</p>
-        <form class="admin-grid-form" method="post" action="/admin/knowledge">
-          <input name="title" value="مصدر البيانات الرئيسي" placeholder="عنوان المصدر" required>
-          <input name="tags" value="datasource" placeholder="وسوم">
-          <textarea name="content" placeholder="اشرح للوكيل من أين تأتي البيانات، ما هي أنواع المنتجات، وكيف يتم تحديثها..." required style="grid-column:1/-1;min-height:120px;"></textarea>
-          <button type="submit" class="admin-btn-primary" style="grid-column:1/-1;">حفظ التدريب</button>
-        </form>
-      </div>
-    </section>
-
-    <!-- ── PUBLISH TO ── -->
-    <section class="admin-section" id="section-publish">
-      <div class="admin-section-title">🚀 النشر إلى — إلى أين أنشر؟</div>
-
-      <div class="admin-card">
-        <div class="admin-card-title">قنوات النشر</div>
-        <p class="admin-hint">حدد القنوات التي تريد نشر متجرك أو منتجاتك إليها.</p>
-        <div class="datasource-grid">
-
-          <div class="datasource-card">
-            <div class="datasource-icon">🌐</div>
-            <div class="datasource-name">الموقع الإلكتروني</div>
-            <div class="datasource-desc">نشر مباشر على المتجر الحالي — جميع التغييرات تظهر فوراً.</div>
-            <div style="margin-top:10px;padding:8px 12px;background:#16a34a22;border-radius:10px;font-size:13px;color:#4ade80;">
-              ✅ نشط — الموقع يعمل الآن
+        <div class="adm-card">
+          <div class="adm-card-header">
+            <div>
+              <div class="adm-card-title">آخر المحادثات</div>
+              <div class="adm-card-sub">{{ conversations | length }} محادثة</div>
             </div>
           </div>
+          <div class="adm-table-wrap">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>عنوان المحادثة</th>
+                  <th>آخر تحديث</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for conv in conversations %}
+                <tr>
+                  <td><span class="adm-badge adm-badge-gray">#{{ conv.id }}</span></td>
+                  <td>{{ conv.title[:55] if conv.title else '—' }}</td>
+                  <td style="color:#64748b;font-size:12px;">{{ conv.updated_at.strftime('%Y-%m-%d %H:%M') if conv.updated_at else '—' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" class="adm-empty">لا توجد محادثات بعد.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
 
-          <div class="datasource-card">
-            <div class="datasource-icon">📱</div>
-            <div class="datasource-name">واتساب / تيليغرام</div>
-            <div class="datasource-desc">إرسال تحديثات المنتجات والعروض عبر القنوات الاجتماعية.</div>
-            <form class="admin-grid-form" onsubmit="handleChannelPublish(event,'whatsapp')" style="margin-top:10px;grid-template-columns:1fr;">
-              <input id="pub-wa-token" placeholder="رقم الهاتف أو رمز API" type="text">
-              <button type="submit" class="admin-btn-primary">إعداد القناة</button>
+      <!-- ══════════════════════════════
+           PRODUCTS
+      ══════════════════════════════ -->
+      <section class="adm-section" id="section-products">
+        <div class="adm-page-header">
+          <div>
+            <div class="adm-page-title">📦 إدارة المنتجات</div>
+            <div class="adm-page-sub">{{ products | length }} منتج في المتجر</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-add-product')">
+            ＋ إضافة منتج
+          </button>
+        </div>
+
+        <div class="adm-card" style="padding:0;overflow:hidden;">
+          <div class="adm-table-wrap">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>المنتج</th>
+                  <th>التصنيف</th>
+                  <th>السعر</th>
+                  <th>الحالة</th>
+                  <th>إجراءات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for product in products %}
+                <tr>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      {% if product.image_url %}
+                      <img src="{{ product.image_url }}" class="product-img" onerror="this.style.display='none'">
+                      {% else %}
+                      <div class="product-img">📦</div>
+                      {% endif %}
+                      <div>
+                        <div style="font-weight:600;color:#f1f5f9;">{{ product.name }}</div>
+                        <div style="font-size:11px;color:#64748b;margin-top:2px;">{{ (product.description or '')[:40] }}{% if product.description and product.description|length > 40 %}...{% endif %}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="adm-badge adm-badge-blue">{{ product.category or '—' }}</span></td>
+                  <td>
+                    <div style="font-weight:700;color:#f1f5f9;">{{ product.price }} $</div>
+                    {% if product.old_price %}<div style="font-size:11px;color:#64748b;text-decoration:line-through;">{{ product.old_price }} $</div>{% endif %}
+                  </td>
+                  <td>
+                    {% if product.is_active %}
+                    <span class="adm-badge adm-badge-green">نشط</span>
+                    {% else %}
+                    <span class="adm-badge adm-badge-red">معطّل</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div style="display:flex;gap:6px;">
+                      <button class="btn btn-secondary btn-sm" onclick="openEditProduct({{ product.id }}, {{ product.name | tojson }}, {{ product.price }}, {{ product.old_price or 'null' }}, {{ (product.category or '') | tojson }}, {{ (product.image_url or '') | tojson }}, {{ (product.description or '') | tojson }}, {{ product.is_active | lower }})">✏️ تعديل</button>
+                      <button class="btn btn-danger btn-sm" onclick="confirmDelete('/admin/products/{{ product.id }}/delete', '{{ product.name }}')">🗑️ حذف</button>
+                    </div>
+                  </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="adm-empty">لا توجد منتجات. أضف منتجك الأول!</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════
+           PARTICIPANTS
+      ══════════════════════════════ -->
+      <section class="adm-section" id="section-participants">
+        <div class="adm-page-header">
+          <div>
+            <div class="adm-page-title">👥 المشاركون</div>
+            <div class="adm-page-sub">{{ participants | length }} زائر / مشترك</div>
+          </div>
+        </div>
+
+        <div class="adm-card" style="padding:0;overflow:hidden;">
+          <div class="adm-table-wrap">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>المعرّف</th>
+                  <th>الاسم</th>
+                  <th>البريد الإلكتروني</th>
+                  <th>المحادثات</th>
+                  <th>آخر ظهور</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in participants %}
+                <tr>
+                  <td><span class="adm-badge adm-badge-gray">#{{ p.id }}</span></td>
+                  <td style="font-weight:600;color:#f1f5f9;">{{ p.display_name or '—' }}</td>
+                  <td style="color:#94a3b8;">{{ p.email or 'زائر مجهول' }}</td>
+                  <td><span class="adm-badge adm-badge-blue">{{ conversations | selectattr("participant_id", "equalto", p.id) | list | length }}</span></td>
+                  <td style="font-size:12px;color:#64748b;">{{ p.last_seen_at.strftime('%Y-%m-%d %H:%M') if p.last_seen_at else '—' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="adm-empty">لا يوجد زوار بعد.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════
+           AGENT TRAINING (RAG)
+      ══════════════════════════════ -->
+      <section class="adm-section" id="section-rag">
+        <div class="adm-page-header">
+          <div>
+            <div class="adm-page-title">🤖 تدريب الوكيل</div>
+            <div class="adm-page-sub">{{ knowledge_items | length }} عنصر في قاعدة المعرفة</div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="openModal('modal-upload-rag')">📎 رفع ملف</button>
+            <button class="btn btn-primary" onclick="openModal('modal-add-kb')">＋ إضافة معلومة</button>
+          </div>
+        </div>
+
+        <div class="adm-card" style="padding:0;overflow:hidden;">
+          <div class="adm-table-wrap">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>العنوان</th>
+                  <th>الوسوم</th>
+                  <th>المحتوى</th>
+                  <th>الحالة</th>
+                  <th>إجراءات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in knowledge_items %}
+                <tr>
+                  <td><span class="adm-badge adm-badge-gray">#{{ item.id }}</span></td>
+                  <td style="font-weight:600;color:#f1f5f9;max-width:160px;">{{ item.title }}</td>
+                  <td>{% if item.tags %}<span class="adm-badge adm-badge-blue">{{ item.tags }}</span>{% else %}<span style="color:#475569;">—</span>{% endif %}</td>
+                  <td style="max-width:200px;"><div class="kb-preview">{{ item.content }}</div></td>
+                  <td>
+                    {% if item.is_active %}
+                    <span class="adm-badge adm-badge-green">مفعّل</span>
+                    {% else %}
+                    <span class="adm-badge adm-badge-red">معطّل</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div style="display:flex;gap:6px;">
+                      <button class="btn btn-secondary btn-sm" onclick="openEditKb({{ item.id }}, {{ item.title | tojson }}, {{ (item.tags or '') | tojson }}, {{ item.content | tojson }}, {{ item.is_active | lower }})">✏️ تعديل</button>
+                      <button class="btn btn-danger btn-sm" onclick="confirmDelete('/admin/knowledge/{{ item.id }}/delete', '{{ item.title }}')">🗑️ حذف</button>
+                    </div>
+                  </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="adm-empty">لا توجد معلومات في قاعدة المعرفة بعد.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════
+           DATA SOURCES
+      ══════════════════════════════ -->
+      <section class="adm-section" id="section-datasource">
+        <div class="adm-page-header">
+          <div>
+            <div class="adm-page-title">📥 مصادر البيانات</div>
+            <div class="adm-page-sub">استيراد البيانات وإعداد المصادر</div>
+          </div>
+        </div>
+
+        <div class="ds-grid">
+          <div class="ds-card">
+            <div class="ds-icon">📄</div>
+            <div class="ds-name">ملف CSV / JSON / TXT</div>
+            <div class="ds-desc">استيراد المنتجات والبيانات من ملف محلي مباشرة.</div>
+            <form class="ds-form" method="post" action="/admin/rag/upload" enctype="multipart/form-data">
+              <label class="adm-label">اختر ملفاً</label>
+              <input type="file" name="file" accept=".csv,.json,.txt,.md" required class="adm-input" style="padding:7px;">
+              <input name="tags" placeholder="وسوم (مثل: products, offers)" value="datasource-import" class="adm-input">
+              <button type="submit" class="btn btn-primary" style="width:100%;">استيراد الملف</button>
             </form>
-            <div id="pub-wa-result" style="margin-top:8px;font-size:13px;color:#94a3b8;"></div>
           </div>
 
-          <div class="datasource-card">
-            <div class="datasource-icon">📧</div>
-            <div class="datasource-name">البريد الإلكتروني</div>
-            <div class="datasource-desc">إرسال النشرات الإخبارية وتحديثات العروض للمشتركين.</div>
-            <form class="admin-grid-form" onsubmit="handleChannelPublish(event,'email')" style="margin-top:10px;grid-template-columns:1fr;">
-              <input id="pub-email-smtp" placeholder="SMTP أو مفتاح SendGrid" type="text">
-              <button type="submit" class="admin-btn-primary">إعداد البريد</button>
+          <div class="ds-card">
+            <div class="ds-icon">🔗</div>
+            <div class="ds-name">API خارجي</div>
+            <div class="ds-desc">اختبر الاتصال بمصدر بيانات خارجي عبر رابط API.</div>
+            <form class="ds-form" onsubmit="handleApiSource(event)">
+              <label class="adm-label">رابط API</label>
+              <input id="ds-api-url" placeholder="https://api.example.com/products" type="url" class="adm-input">
+              <label class="adm-label">مفتاح API (اختياري)</label>
+              <input id="ds-api-key" placeholder="Bearer token أو API key" type="password" class="adm-input">
+              <button type="submit" class="btn btn-primary" style="width:100%;">اختبار الاتصال</button>
             </form>
-            <div id="pub-email-result" style="margin-top:8px;font-size:13px;color:#94a3b8;"></div>
+            <div id="ds-api-result" style="font-size:12px;margin-top:6px;"></div>
           </div>
 
-          <div class="datasource-card">
-            <div class="datasource-icon">🛒</div>
-            <div class="datasource-name">منصات التجارة</div>
-            <div class="datasource-desc">مزامنة المنتجات مع منصات خارجية (Shopify، WooCommerce...).</div>
-            <form class="admin-grid-form" onsubmit="handleChannelPublish(event,'platform')" style="margin-top:10px;grid-template-columns:1fr;">
-              <input id="pub-platform-url" placeholder="رابط API المنصة" type="url">
-              <input id="pub-platform-key" placeholder="مفتاح API" type="password">
-              <button type="submit" class="admin-btn-primary">ربط المنصة</button>
-            </form>
-            <div id="pub-platform-result" style="margin-top:8px;font-size:13px;color:#94a3b8;"></div>
+          <div class="ds-card">
+            <div class="ds-icon">✏️</div>
+            <div class="ds-name">إدخال يدوي</div>
+            <div class="ds-desc">أضف المنتجات أو معلومات الوكيل مباشرة من لوحة التحكم.</div>
+            <button class="btn btn-primary" style="width:100%;margin-top:auto;" onclick="switchSection('products')">إدارة المنتجات ←</button>
+            <button class="btn btn-secondary" style="width:100%;" onclick="switchSection('rag')">تدريب الوكيل ←</button>
           </div>
 
+          <div class="ds-card">
+            <div class="ds-icon">🌐</div>
+            <div class="ds-name">الموقع الإلكتروني</div>
+            <div class="ds-desc">المتجر يعمل الآن. جميع التغييرات تظهر فوراً.</div>
+            <div class="ds-status ds-active" style="margin-top:auto;">✅ نشط — يعمل الآن</div>
+            <a href="/" target="_blank" class="btn btn-secondary" style="width:100%;">فتح المتجر ↗</a>
+          </div>
+        </div>
+
+        <div class="adm-card">
+          <div class="adm-card-header">
+            <div class="adm-card-title">🤖 تدريب الوكيل على المصادر</div>
+          </div>
+          <form class="adm-form" method="post" action="/admin/knowledge">
+            <div class="adm-field-row">
+              <div class="adm-field">
+                <label class="adm-label">عنوان التدريب</label>
+                <input name="title" value="مصدر البيانات الرئيسي" class="adm-input" required>
+              </div>
+              <div class="adm-field">
+                <label class="adm-label">الوسوم</label>
+                <input name="tags" value="datasource" class="adm-input">
+              </div>
+            </div>
+            <div class="adm-field">
+              <label class="adm-label">اشرح للوكيل مصادر بياناتك</label>
+              <textarea name="content" class="adm-textarea" placeholder="اشرح من أين تأتي البيانات، ما هي أنواع المنتجات، كيف يتم تحديثها..." required></textarea>
+            </div>
+            <div style="display:flex;justify-content:flex-end;">
+              <button type="submit" class="btn btn-primary">حفظ التدريب</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════
+           PUBLISH TO
+      ══════════════════════════════ -->
+      <section class="adm-section" id="section-publish">
+        <div class="adm-page-header">
+          <div>
+            <div class="adm-page-title">🚀 قنوات النشر</div>
+            <div class="adm-page-sub">إلى أين تنشر منتجاتك وعروضك؟</div>
+          </div>
+        </div>
+
+        <div class="ds-grid">
+          <div class="ds-card">
+            <div class="ds-icon">🌐</div>
+            <div class="ds-name">الموقع الإلكتروني</div>
+            <div class="ds-desc">النشر المباشر على المتجر — التغييرات تظهر فوراً دون أي إعداد.</div>
+            <div class="ds-status ds-active">✅ نشط تلقائياً</div>
+          </div>
+
+          <div class="ds-card">
+            <div class="ds-icon">📱</div>
+            <div class="ds-name">واتساب / تيليغرام</div>
+            <div class="ds-desc">أرسل تحديثات المنتجات والعروض عبر قنوات الرسائل.</div>
+            <form class="ds-form" onsubmit="handleChannelPublish(event,'wa')">
+              <label class="adm-label">رقم الهاتف أو رمز API</label>
+              <input id="pub-wa-token" placeholder="رقم الهاتف أو API token" class="adm-input">
+              <button type="submit" class="btn btn-primary" style="width:100%;">إعداد القناة</button>
+            </form>
+            <div id="pub-wa-result" style="font-size:12px;"></div>
+          </div>
+
+          <div class="ds-card">
+            <div class="ds-icon">📧</div>
+            <div class="ds-name">البريد الإلكتروني</div>
+            <div class="ds-desc">نشرات إخبارية وتحديثات عروض لجميع المشتركين.</div>
+            <form class="ds-form" onsubmit="handleChannelPublish(event,'email')">
+              <label class="adm-label">SMTP أو مفتاح SendGrid</label>
+              <input id="pub-email-smtp" placeholder="smtp.gmail.com أو SG.xxxx" class="adm-input">
+              <button type="submit" class="btn btn-primary" style="width:100%;">إعداد البريد</button>
+            </form>
+            <div id="pub-email-result" style="font-size:12px;"></div>
+          </div>
+
+          <div class="ds-card">
+            <div class="ds-icon">🛒</div>
+            <div class="ds-name">منصات التجارة</div>
+            <div class="ds-desc">مزامنة مع Shopify أو WooCommerce أو غيرها.</div>
+            <form class="ds-form" onsubmit="handleChannelPublish(event,'platform')">
+              <label class="adm-label">رابط API المنصة</label>
+              <input id="pub-platform-url" placeholder="https://your-store.myshopify.com/api" type="url" class="adm-input">
+              <label class="adm-label">مفتاح API</label>
+              <input id="pub-platform-key" placeholder="shpat_xxxxxxxxxxxx" type="password" class="adm-input">
+              <button type="submit" class="btn btn-primary" style="width:100%;">ربط المنصة</button>
+            </form>
+            <div id="pub-platform-result" style="font-size:12px;"></div>
+          </div>
+        </div>
+
+        <div class="adm-card">
+          <div class="adm-card-header">
+            <div class="adm-card-title">🤖 تدريب الوكيل على قنوات النشر</div>
+          </div>
+          <form class="adm-form" method="post" action="/admin/knowledge">
+            <div class="adm-field-row">
+              <div class="adm-field">
+                <label class="adm-label">عنوان التدريب</label>
+                <input name="title" value="قنوات النشر والتوزيع" class="adm-input" required>
+              </div>
+              <div class="adm-field">
+                <label class="adm-label">الوسوم</label>
+                <input name="tags" value="publish,channels" class="adm-input">
+              </div>
+            </div>
+            <div class="adm-field">
+              <label class="adm-label">اشرح قنوات النشر للوكيل</label>
+              <textarea name="content" class="adm-textarea" placeholder="اشرح القنوات التي تستخدمها، كيف يتم التنسيق، ما المنتجات المناسبة لكل قناة..." required></textarea>
+            </div>
+            <div style="display:flex;justify-content:flex-end;">
+              <button type="submit" class="btn btn-primary">حفظ التدريب</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════
+           ADMINS
+      ══════════════════════════════ -->
+      <section class="adm-section" id="section-admins">
+        <div class="adm-page-header">
+          <div>
+            <div class="adm-page-title">🛡️ المشرفون</div>
+            <div class="adm-page-sub">{{ admins | length }} مشرف في النظام</div>
+          </div>
+        </div>
+
+        <div class="adm-card" style="padding:0;overflow:hidden;">
+          <div class="adm-table-wrap">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>الاسم</th>
+                  <th>البريد الإلكتروني</th>
+                  <th>طريقة الدخول</th>
+                  <th>الدور</th>
+                  <th>تاريخ الإضافة</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user in admins %}
+                <tr>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      {% if user.picture_url %}
+                      <img src="{{ user.picture_url }}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">
+                      {% else %}
+                      <div style="width:34px;height:34px;border-radius:50%;background:#1e293b;display:flex;align-items:center;justify-content:center;font-size:16px;">👤</div>
+                      {% endif %}
+                      <span style="font-weight:600;color:#f1f5f9;">{{ user.name }}</span>
+                    </div>
+                  </td>
+                  <td style="color:#94a3b8;">{{ user.email }}</td>
+                  <td><span class="adm-badge adm-badge-blue">{{ user.provider or 'email' }}</span></td>
+                  <td><span class="adm-badge adm-badge-green">{{ user.role or 'admin' }}</span></td>
+                  <td style="font-size:12px;color:#64748b;">{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '—' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="adm-empty">لا يوجد مشرفون.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════
+     MODAL: Add Product
+══════════════════════════════ -->
+<div class="modal-overlay" id="modal-add-product">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">📦 إضافة منتج جديد</div>
+      <button class="modal-close" onclick="closeModal('modal-add-product')">&times;</button>
+    </div>
+    <form class="adm-form" method="post" action="/admin/products">
+      <div class="adm-field-row">
+        <div class="adm-field">
+          <label class="adm-label">اسم المنتج *</label>
+          <input name="name" placeholder="مثال: قميص قطني" class="adm-input" required>
+        </div>
+        <div class="adm-field">
+          <label class="adm-label">التصنيف</label>
+          <input name="category" placeholder="مثال: Fashion" class="adm-input">
         </div>
       </div>
-
-      <div class="admin-card">
-        <div class="admin-card-title">🤖 تدريب الوكيل على قنوات النشر</div>
-        <p class="admin-hint">علّم الوكيل كيف يجيب على أسئلة النشر والتوزيع لمساعدتك بشكل أفضل.</p>
-        <form class="admin-grid-form" method="post" action="/admin/knowledge">
-          <input name="title" value="قنوات النشر والتوزيع" placeholder="عنوان التدريب" required>
-          <input name="tags" value="publish,channels" placeholder="وسوم">
-          <textarea name="content" placeholder="اشرح للوكيل القنوات التي تستخدمها للنشر، وكيف يتم التنسيق، وما هي المنتجات المناسبة لكل قناة..." required style="grid-column:1/-1;min-height:120px;"></textarea>
-          <button type="submit" class="admin-btn-primary" style="grid-column:1/-1;">حفظ التدريب</button>
-        </form>
-      </div>
-    </section>
-
-    <!-- ── ADMINS ── -->
-    <section class="admin-section" id="section-admins">
-      <div class="admin-section-title">🛡️ مشرفو النظام</div>
-      <div class="admin-card">
-        <div class="admin-card-title">قائمة المشرفين ({{ admins | length }})</div>
-        <div class="admin-table" style="grid-template-columns:1fr 1fr 1fr 1fr;">
-          <div class="admin-table-head">الاسم</div>
-          <div class="admin-table-head">البريد</div>
-          <div class="admin-table-head">طريقة الدخول</div>
-          <div class="admin-table-head">الدور</div>
-          {% for user in admins %}
-          <div>{{ user.name }}</div>
-          <div style="font-size:13px;color:#94a3b8;">{{ user.email }}</div>
-          <div>{{ user.provider }}</div>
-          <div>{{ user.role }}</div>
-          {% endfor %}
+      <div class="adm-field-row">
+        <div class="adm-field">
+          <label class="adm-label">السعر الحالي ($) *</label>
+          <input name="price" type="number" step="0.01" min="0" placeholder="0.00" class="adm-input" required>
+        </div>
+        <div class="adm-field">
+          <label class="adm-label">السعر القديم ($)</label>
+          <input name="old_price" type="number" step="0.01" min="0" placeholder="0.00" class="adm-input">
         </div>
       </div>
-    </section>
+      <div class="adm-field">
+        <label class="adm-label">رابط الصورة</label>
+        <input name="image_url" placeholder="https://example.com/image.jpg" class="adm-input">
+      </div>
+      <div class="adm-field">
+        <label class="adm-label">وصف المنتج</label>
+        <textarea name="description" placeholder="وصف مفصّل عن المنتج..." class="adm-textarea"></textarea>
+      </div>
+      <div class="adm-check-row">
+        <input type="checkbox" name="is_active" id="add-p-active" checked>
+        <label for="add-p-active">منتج نشط (يظهر في المتجر)</label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-product')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">إضافة المنتج</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-  </section>
-</main>
+<!-- ══════════════════════════════
+     MODAL: Edit Product
+══════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit-product">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">✏️ تعديل المنتج</div>
+      <button class="modal-close" onclick="closeModal('modal-edit-product')">&times;</button>
+    </div>
+    <form class="adm-form" id="form-edit-product" method="post">
+      <div class="adm-field-row">
+        <div class="adm-field">
+          <label class="adm-label">اسم المنتج *</label>
+          <input id="ep-name" name="name" class="adm-input" required>
+        </div>
+        <div class="adm-field">
+          <label class="adm-label">التصنيف</label>
+          <input id="ep-category" name="category" class="adm-input">
+        </div>
+      </div>
+      <div class="adm-field-row">
+        <div class="adm-field">
+          <label class="adm-label">السعر الحالي ($) *</label>
+          <input id="ep-price" name="price" type="number" step="0.01" min="0" class="adm-input" required>
+        </div>
+        <div class="adm-field">
+          <label class="adm-label">السعر القديم ($)</label>
+          <input id="ep-old-price" name="old_price" type="number" step="0.01" min="0" class="adm-input">
+        </div>
+      </div>
+      <div class="adm-field">
+        <label class="adm-label">رابط الصورة</label>
+        <input id="ep-image" name="image_url" class="adm-input">
+      </div>
+      <div class="adm-field">
+        <label class="adm-label">وصف المنتج</label>
+        <textarea id="ep-desc" name="description" class="adm-textarea"></textarea>
+      </div>
+      <div class="adm-check-row">
+        <input type="checkbox" name="is_active" id="ep-active">
+        <label for="ep-active">منتج نشط (يظهر في المتجر)</label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-edit-product')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     MODAL: Add Knowledge
+══════════════════════════════ -->
+<div class="modal-overlay" id="modal-add-kb">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">🧠 إضافة معلومة للوكيل</div>
+      <button class="modal-close" onclick="closeModal('modal-add-kb')">&times;</button>
+    </div>
+    <form class="adm-form" method="post" action="/admin/knowledge">
+      <div class="adm-field-row">
+        <div class="adm-field">
+          <label class="adm-label">العنوان *</label>
+          <input name="title" placeholder="مثال: سياسة الشحن" class="adm-input" required>
+        </div>
+        <div class="adm-field">
+          <label class="adm-label">الوسوم</label>
+          <input name="tags" placeholder="shipping, offers, policy" class="adm-input">
+        </div>
+      </div>
+      <div class="adm-field">
+        <label class="adm-label">محتوى التدريب *</label>
+        <textarea name="content" class="adm-textarea" style="min-height:140px;" placeholder="اكتب المعلومة التي تريد أن يعرفها الوكيل..." required></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-kb')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">إضافة إلى المعرفة</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     MODAL: Edit Knowledge
+══════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit-kb">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">✏️ تعديل المعلومة</div>
+      <button class="modal-close" onclick="closeModal('modal-edit-kb')">&times;</button>
+    </div>
+    <form class="adm-form" id="form-edit-kb" method="post">
+      <div class="adm-field-row">
+        <div class="adm-field">
+          <label class="adm-label">العنوان *</label>
+          <input id="ek-title" name="title" class="adm-input" required>
+        </div>
+        <div class="adm-field">
+          <label class="adm-label">الوسوم</label>
+          <input id="ek-tags" name="tags" class="adm-input">
+        </div>
+      </div>
+      <div class="adm-field">
+        <label class="adm-label">المحتوى *</label>
+        <textarea id="ek-content" name="content" class="adm-textarea" style="min-height:140px;" required></textarea>
+      </div>
+      <div class="adm-check-row">
+        <input type="checkbox" name="is_active" id="ek-active">
+        <label for="ek-active">مفعّل في قاعدة المعرفة</label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-edit-kb')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     MODAL: Upload RAG File
+══════════════════════════════ -->
+<div class="modal-overlay" id="modal-upload-rag">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-header">
+      <div class="modal-title">📎 رفع ملف تدريب</div>
+      <button class="modal-close" onclick="closeModal('modal-upload-rag')">&times;</button>
+    </div>
+    <form class="adm-form" method="post" action="/admin/rag/upload" enctype="multipart/form-data">
+      <div class="adm-field">
+        <label class="adm-label">اختر ملفاً (.txt, .md, .csv, .json)</label>
+        <input type="file" name="file" accept=".txt,.md,.csv,.json" required class="adm-input" style="padding:7px;">
+      </div>
+      <div class="adm-field">
+        <label class="adm-label">الوسوم</label>
+        <input name="tags" value="uploaded" placeholder="وسوم الملف" class="adm-input">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-upload-rag')">إلغاء</button>
+        <button type="submit" class="btn btn-primary">رفع الملف</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     MODAL: Confirm Delete
+══════════════════════════════ -->
+<div class="modal-overlay" id="modal-confirm-delete">
+  <div class="modal-box confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-msg">هل أنت متأكد من حذف <strong id="confirm-item-name"></strong>؟</div>
+    <div class="confirm-sub">لا يمكن التراجع عن هذا الإجراء.</div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-confirm-delete')">إلغاء</button>
+      <form id="confirm-delete-form" method="post" style="margin:0;">
+        <button type="submit" class="btn btn-danger">نعم، احذف</button>
+      </form>
+    </div>
+  </div>
+</div>
 
 <script>
-// ===== SECTION SWITCHING =====
+// ── Section Switching ──
 function switchSection(name) {
-  document.querySelectorAll('.admin-nav-item').forEach(function(a) {
+  document.querySelectorAll('.adm-nav-item[data-section]').forEach(function(a) {
     a.classList.toggle('active', a.getAttribute('data-section') === name);
   });
-  document.querySelectorAll('.admin-section').forEach(function(s) {
+  document.querySelectorAll('.adm-section').forEach(function(s) {
     s.classList.toggle('active', s.id === 'section-' + name);
   });
+  closeSidebar();
 }
 
-document.querySelectorAll('.admin-nav-item[data-section]').forEach(function(a) {
+document.querySelectorAll('.adm-nav-item[data-section]').forEach(function(a) {
   a.addEventListener('click', function(e) {
     e.preventDefault();
     switchSection(this.getAttribute('data-section'));
   });
 });
 
-// ===== API Source Test =====
+// ── Mobile Sidebar ──
+var sidebar = document.getElementById('admSidebar');
+var overlay = document.getElementById('admOverlay');
+
+function openSidebar() {
+  sidebar.classList.add('open');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('admHamburger').addEventListener('click', openSidebar);
+overlay.addEventListener('click', closeSidebar);
+
+// ── Modals ──
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.querySelectorAll('.modal-overlay').forEach(function(m) {
+  m.addEventListener('click', function(e) {
+    if (e.target === this) closeModal(this.id);
+  });
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(function(m) { closeModal(m.id); });
+  }
+});
+
+// ── Edit Product Modal ──
+function openEditProduct(id, name, price, oldPrice, category, imageUrl, description, isActive) {
+  document.getElementById('form-edit-product').action = '/admin/products/' + id;
+  document.getElementById('ep-name').value = name;
+  document.getElementById('ep-price').value = price;
+  document.getElementById('ep-old-price').value = oldPrice || '';
+  document.getElementById('ep-category').value = category;
+  document.getElementById('ep-image').value = imageUrl;
+  document.getElementById('ep-desc').value = description;
+  document.getElementById('ep-active').checked = isActive;
+  openModal('modal-edit-product');
+}
+
+// ── Edit Knowledge Modal ──
+function openEditKb(id, title, tags, content, isActive) {
+  document.getElementById('form-edit-kb').action = '/admin/knowledge/' + id;
+  document.getElementById('ek-title').value = title;
+  document.getElementById('ek-tags').value = tags;
+  document.getElementById('ek-content').value = content;
+  document.getElementById('ek-active').checked = isActive;
+  openModal('modal-edit-kb');
+}
+
+// ── Confirm Delete ──
+function confirmDelete(action, name) {
+  document.getElementById('confirm-delete-form').action = action;
+  document.getElementById('confirm-item-name').textContent = '"' + name + '"';
+  openModal('modal-confirm-delete');
+}
+
+// ── API Source Test ──
 function handleApiSource(e) {
   e.preventDefault();
   var url = document.getElementById('ds-api-url').value.trim();
+  var key = document.getElementById('ds-api-key').value.trim();
   var result = document.getElementById('ds-api-result');
-  if (!url) { result.textContent = 'أدخل الرابط أولاً.'; return; }
+  if (!url) { result.style.color='#f87171'; result.textContent = 'أدخل الرابط أولاً.'; return; }
+  result.style.color = '#94a3b8';
   result.textContent = '⏳ جارٍ الاختبار...';
-  fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } })
+  var headers = { 'Accept': 'application/json' };
+  if (key) headers['Authorization'] = 'Bearer ' + key;
+  fetch(url, { method: 'GET', headers: headers })
     .then(function(r) {
       result.style.color = r.ok ? '#4ade80' : '#f87171';
-      result.textContent = r.ok ? '✅ الاتصال ناجح — الكود: ' + r.status : '❌ فشل الاتصال — الكود: ' + r.status;
+      result.textContent = r.ok ? '✅ الاتصال ناجح — كود: ' + r.status : '❌ فشل — كود: ' + r.status;
     })
     .catch(function() {
       result.style.color = '#f87171';
@@ -404,76 +1231,18 @@ function handleApiSource(e) {
     });
 }
 
-// ===== Channel Publish =====
-function handleChannelPublish(e, channel) {
+// ── Channel Publish ──
+function handleChannelPublish(e, ch) {
   e.preventDefault();
-  var resultEl = document.getElementById('pub-' + (channel === 'whatsapp' ? 'wa' : channel === 'email' ? 'email' : 'platform') + '-result');
-  if (resultEl) {
-    resultEl.style.color = '#fbbf24';
-    resultEl.textContent = '⏳ جارٍ الحفظ... (يمكنك ربط API حقيقي لاحقاً)';
-    setTimeout(function() {
-      resultEl.style.color = '#4ade80';
-      resultEl.textContent = '✅ تم حفظ الإعداد بنجاح.';
-    }, 1200);
-  }
+  var map = { wa:'wa', email:'email', platform:'platform' };
+  var el = document.getElementById('pub-' + map[ch] + '-result');
+  if (!el) return;
+  el.style.color = '#fbbf24';
+  el.textContent = '⏳ جارٍ الحفظ...';
+  setTimeout(function() {
+    el.style.color = '#4ade80';
+    el.textContent = '✅ تم حفظ الإعداد — يمكنك ربط API حقيقي لاحقاً.';
+  }, 1200);
 }
 </script>
-
-<style>
-.admin-page { display:grid; grid-template-columns:260px minmax(0,1fr); min-height:100vh; background:#0f172a; color:#e5e7eb; direction:rtl; }
-.admin-sidebar { background:#020617; padding:20px 16px; display:flex; flex-direction:column; gap:0; position:sticky; top:0; height:100vh; overflow-y:auto; }
-.admin-sidebar-brand { display:flex; align-items:center; gap:12px; padding:12px 8px 20px; border-bottom:1px solid #1e293b; margin-bottom:14px; }
-.admin-brand-icon { font-size:28px; }
-.admin-brand-name { font-weight:700; font-size:15px; color:#f1f5f9; }
-.admin-brand-user { font-size:12px; color:#64748b; margin-top:2px; }
-.admin-nav { display:flex; flex-direction:column; gap:4px; flex:1; }
-.admin-nav-item { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:12px; color:#94a3b8; text-decoration:none; font-size:14px; transition:all .18s; border:none; background:none; width:100%; cursor:pointer; }
-.admin-nav-item:hover { background:#1e293b; color:#e2e8f0; }
-.admin-nav-item.active { background:#2563eb; color:#fff; font-weight:600; }
-.admin-nav-icon { font-size:16px; flex-shrink:0; }
-.admin-sidebar-bottom { border-top:1px solid #1e293b; padding-top:12px; margin-top:12px; display:flex; flex-direction:column; gap:4px; }
-.admin-logout-btn { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:12px; color:#f87171; background:none; border:none; width:100%; cursor:pointer; font-size:14px; transition:all .18s; }
-.admin-logout-btn:hover { background:#1e293b; }
-.admin-content { padding:28px; display:flex; flex-direction:column; gap:0; overflow-y:auto; }
-.admin-section { display:none; flex-direction:column; gap:20px; }
-.admin-section.active { display:flex; }
-.admin-section-title { font-size:20px; font-weight:700; color:#f1f5f9; margin-bottom:6px; }
-.admin-card { background:#111827; border:1px solid rgba(148,163,184,.16); border-radius:18px; padding:20px; }
-.admin-card-title { font-size:14px; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; margin-bottom:14px; }
-.admin-hint { font-size:13px; color:#64748b; margin:-6px 0 14px; }
-.stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:16px; }
-.stat-card { background:#111827; border:1px solid rgba(148,163,184,.16); border-radius:16px; padding:22px 16px; text-align:center; }
-.stat-icon { font-size:28px; margin-bottom:10px; }
-.stat-value { font-size:32px; font-weight:700; color:#fff; line-height:1; }
-.stat-label { font-size:12px; color:#64748b; margin-top:6px; }
-.admin-table { display:grid; gap:1px; overflow:hidden; border-radius:12px; margin-top:4px; }
-.admin-table > div { background:#020617; padding:11px 12px; font-size:13px; }
-.admin-table-head { background:#0f172a !important; color:#64748b; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
-.admin-grid-form, .admin-edit-form, .upload-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-.admin-grid-form textarea, .admin-edit-form textarea { grid-column:1/-1; min-height:90px; }
-.admin-card input, .admin-card textarea, .admin-card select { width:100%; border:1px solid #334155; border-radius:10px; background:#020617; color:#fff; padding:10px 12px; font-size:14px; }
-.admin-card input::placeholder, .admin-card textarea::placeholder { color:#475569; }
-.admin-list { display:flex; flex-direction:column; gap:12px; margin-top:8px; }
-.admin-row { border:1px solid rgba(148,163,184,.12); border-radius:14px; padding:14px; }
-.admin-check-label { display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; }
-.admin-btn-primary { background:#2563eb; color:#fff; border:none; border-radius:10px; padding:10px 18px; font-size:14px; font-weight:600; cursor:pointer; transition:background .15s; }
-.admin-btn-primary:hover { background:#1d4ed8; }
-.admin-btn-danger { background:#dc2626; color:#fff; border:none; border-radius:10px; padding:8px 16px; font-size:13px; cursor:pointer; }
-.admin-btn-danger:hover { background:#b91c1c; }
-.admin-btn-secondary { background:#1e293b; color:#94a3b8; border:none; border-radius:10px; padding:9px 16px; font-size:13px; cursor:pointer; width:100%; }
-.datasource-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
-.datasource-card { background:#0f172a; border:1px solid rgba(148,163,184,.14); border-radius:14px; padding:18px; }
-.datasource-icon { font-size:26px; margin-bottom:8px; }
-.datasource-name { font-weight:700; font-size:15px; color:#f1f5f9; margin-bottom:4px; }
-.datasource-desc { font-size:12px; color:#64748b; line-height:1.5; }
-.upload-form { display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; }
-@media (max-width:800px) {
-  .admin-page { grid-template-columns:1fr; }
-  .admin-sidebar { height:auto; position:static; }
-  .stats-grid { grid-template-columns:repeat(2,1fr); }
-  .datasource-grid { grid-template-columns:1fr; }
-  .admin-grid-form, .admin-edit-form { grid-template-columns:1fr; }
-  .upload-form { grid-template-columns:1fr; }
-}
-</style>
 {% endblock %}
