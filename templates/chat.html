@@ -173,6 +173,7 @@
   var isRecording = false;
   var currentTtsUtterance = null;
   var chatUser = null; // {uid, name, email, photo}
+  var chatEntered = false; // once true, never show auth gate again
 
   // ===== ELEMENTS =====
   var authGate      = document.getElementById('chatAuthGate');
@@ -250,6 +251,7 @@
 
   // ===== ENTER CHAT =====
   window.enterChat = function() {
+    chatEntered = true;
     authGate.style.display = 'none';
     chatMain.style.display = 'flex';
     loadConversations();
@@ -295,6 +297,9 @@
 
   // ===== CHECK FIREBASE AUTH STATE + SESSION RESTORE =====
   firebase.auth().onAuthStateChanged(function(firebaseUser) {
+    // Never kick the user out once they've entered the chat
+    if (chatEntered) return;
+
     if (firebaseUser) {
       var user = {
         uid: firebaseUser.uid,
