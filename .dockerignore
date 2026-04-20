@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+.local
+.cache
+.upm
+.pythonlibs
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+.agents
+README.md

@@ -6,3 +6,5 @@ venv/
 env/
 store.db
 .pytest_cache/
+postgres_data/
+*.log

@@ -19,8 +19,20 @@ app/
   chat_agent.py    - AI chat agent (intent detection + RAG)
 templates/         - Jinja2 HTML templates
 static/            - CSS, JS, images
-requirements.txt   - Python dependencies
+requirements.txt   - Python dependencies (cleaned, no duplicates)
+Dockerfile         - Docker image build instructions
+docker-compose.yml - App + PostgreSQL orchestration
+.env.example       - Environment variables template
+.dockerignore      - Docker build exclusions
 ```
+
+## Docker Deployment
+Copy `.env.example` to `.env`, fill in your values, then run:
+```bash
+docker compose up -d --build
+```
+The app will be available at `http://localhost:5000`.
+PostgreSQL data is persisted in the `postgres_data` Docker volume.
 
 ## Running the App
 The app starts via the "Start application" workflow:
