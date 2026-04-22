@@ -166,7 +166,8 @@
 <script>
 (function() {
   // ===== FIREBASE STUB (when SDK isn't loaded / not configured) =====
-  if (typeof window.firebase === 'undefined') {
+  var FIREBASE_AVAILABLE = (typeof window.firebase !== 'undefined');
+  if (!FIREBASE_AVAILABLE) {
     var noopAuth = {
       GoogleAuthProvider: function() { this.addScope = function() {}; },
       onAuthStateChanged: function(cb) { try { cb(null); } catch(e) {} },
@@ -278,6 +279,13 @@
   // ===== GOOGLE SIGN IN =====
   window.chatGoogleSignIn = function() {
     authError.style.display = 'none';
+    if (!FIREBASE_AVAILABLE) {
+      var guest = { uid: 'guest-' + Date.now(), name: 'Guest', email: '', photo: '' };
+      saveSession(guest);
+      showSignedIn(guest);
+      enterChat();
+      return;
+    }
     var provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('email');
     firebase.auth().signInWithPopup(provider)
@@ -348,6 +356,12 @@
     var saved = loadSession();
     if (saved) {
       showSignedIn(saved);
+      enterChat();
+    } else if (!FIREBASE_AVAILABLE) {
+      // No Google sign-in available — auto-enter as guest so the chat is usable
+      var guest = { uid: 'guest-' + Date.now(), name: 'Guest', email: '', photo: '' };
+      saveSession(guest);
+      showSignedIn(guest);
       enterChat();
     }
   })();
