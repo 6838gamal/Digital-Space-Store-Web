@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
+{% if google_client_id %}
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<meta name="google-signin-client_id" content="{{ google_client_id }}">
+{% endif %}
 <style>
   #back-to-top, #sidenav-overlay { display: none !important; }
 
@@ -70,11 +74,11 @@
 
   <!-- Not-signed-in state -->
   <div id="authStateGuest">
-    <a class="chat-auth-google-btn" href="/chat/auth/google" style="text-decoration:none;">
-      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.3 6.5 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.8 18.9 12 24 12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.3 6.5 29.4 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.6l6.2 5.2C37 36.5 44 31 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
-      <span data-en="Sign in with Google" data-ar="تسجيل الدخول بـ Google">Sign in with Google</span>
-    </a>
+    <div id="googleSignInBtn" style="display:flex;justify-content:center;"></div>
     <div id="authError" style="display:none;color:#f87171;font-size:13px;margin-top:8px;"></div>
+    {% if not google_client_id %}
+    <div style="color:#f87171;font-size:13px;margin-top:8px;" data-en="Google sign-in is not configured." data-ar="تسجيل الدخول بـ Google غير مفعّل.">Google sign-in is not configured.</div>
+    {% endif %}
   </div>
 
   <!-- Signed-in state -->
@@ -260,10 +264,7 @@
     applyLanguage(getLang());
   };
 
-  // ===== GOOGLE SIGN IN (server-side OAuth) =====
-  window.chatGoogleSignIn = function() {
-    window.location.href = '/chat/auth/google';
-  };
+  var GOOGLE_CLIENT_ID = {{ (google_client_id or "")|tojson }};
 
   // ===== SIGN OUT =====
   window.chatSignOut = function() {
@@ -274,8 +275,67 @@
         chatEntered = false;
         authGate.style.display = 'flex';
         chatMain.style.display = 'none';
+        renderGoogleBtn();
       });
   };
+
+  function showAuthError(msg) {
+    authError.textContent = msg;
+    authError.style.display = 'block';
+  }
+
+  function handleGoogleCredential(response) {
+    if (!response || !response.credential) return;
+    fetch('/chat/auth/google/credential', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ credential: response.credential })
+    })
+      .then(function(r) { return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
+      .then(function(res) {
+        if (res.ok && res.data && res.data.user) {
+          saveSession(res.data.user);
+          showSignedIn(res.data.user);
+          enterChat();
+        } else {
+          showAuthError(getLang() === 'ar' ? 'تعذّر تسجيل الدخول. حاول مرة أخرى.' : 'Sign-in failed. Please try again.');
+        }
+      })
+      .catch(function() {
+        showAuthError(getLang() === 'ar' ? 'تعذّر الاتصال بالخادم.' : 'Could not reach the server.');
+      });
+  }
+
+  function renderGoogleBtn() {
+    if (!GOOGLE_CLIENT_ID || !window.google || !google.accounts || !google.accounts.id) return;
+    var container = document.getElementById('googleSignInBtn');
+    if (!container) return;
+    container.innerHTML = '';
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredential,
+      auto_select: false,
+      cancel_on_tap_outside: true
+    });
+    google.accounts.id.renderButton(container, {
+      theme: 'filled_white',
+      size: 'large',
+      type: 'standard',
+      shape: 'pill',
+      text: 'signin_with',
+      logo_alignment: 'left'
+    });
+  }
+
+  // Wait for the GIS script to load and render the button
+  (function pollForGsi() {
+    if (window.google && google.accounts && google.accounts.id) {
+      renderGoogleBtn();
+    } else {
+      setTimeout(pollForGsi, 200);
+    }
+  })();
 
   // ===== FETCH SESSION FROM SERVER =====
   fetch('/api/chat/me', { credentials: 'same-origin' })
@@ -286,7 +346,6 @@
         showSignedIn(data.user);
         enterChat();
       } else {
-        // Not signed in — show the auth gate (no auto-guest)
         clearSession();
         showGuest();
       }
@@ -296,16 +355,6 @@
       if (saved) { showSignedIn(saved); enterChat(); }
       else { showGuest(); }
     });
-
-  // Show error from query string (e.g. ?error=oauth_failed)
-  (function() {
-    var params = new URLSearchParams(window.location.search);
-    var err = params.get('error');
-    if (err) {
-      authError.textContent = getLang() === 'ar' ? 'تعذّر تسجيل الدخول. حاول مرة أخرى.' : 'Sign-in failed. Please try again.';
-      authError.style.display = 'block';
-    }
-  })();
 
   // ===== DRAWER =====
   function openDrawer() {
