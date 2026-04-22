@@ -165,6 +165,22 @@
 
 <script>
 (function() {
+  // ===== FIREBASE STUB (when SDK isn't loaded / not configured) =====
+  if (typeof window.firebase === 'undefined') {
+    var noopAuth = {
+      GoogleAuthProvider: function() { this.addScope = function() {}; },
+      onAuthStateChanged: function(cb) { try { cb(null); } catch(e) {} },
+      signInWithPopup: function() { return Promise.reject({ code: 'auth/not-configured' }); },
+      signOut: function() { return Promise.resolve(); }
+    };
+    var noopRef = { set: function() { return { catch: function() {} }; } };
+    window.firebase = {
+      auth: function() { return noopAuth; },
+      database: function() { return { ref: function() { return noopRef; } }; }
+    };
+    window.firebase.auth.GoogleAuthProvider = noopAuth.GoogleAuthProvider;
+  }
+
   // ===== STATE =====
   var chatHistory = [];
   var currentConversationId = null;
