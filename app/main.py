@@ -242,11 +242,94 @@ def legacy_jewellery():
 
 @app.get("/chat", name="chat")
 def chat(request: Request):
+    google_ready = bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"))
     return templates.TemplateResponse(
         request=request,
         name="chat.html",
-        context={}
+        context={"google_ready": google_ready}
     )
+
+def build_chat_google_redirect_uri(request: Request) -> str:
+    uri = str(request.url_for("chat_google_callback"))
+    if uri.startswith("http://"):
+        uri = "https://" + uri[7:]
+    return uri
+
+@app.get("/chat/auth/google", name="chat_google_login")
+def chat_google_login(request: Request):
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        return RedirectResponse(url="/chat?error=oauth_not_configured", status_code=302)
+    state = secrets.token_urlsafe(24)
+    request.session["chat_google_oauth_state"] = state
+    redirect_uri = build_chat_google_redirect_uri(request)
+    query = urlencode({
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "online",
+        "state": state,
+        "prompt": "select_account",
+    })
+    return RedirectResponse(url=f"https://accounts.google.com/o/oauth2/v2/auth?{query}", status_code=302)
+
+@app.get("/chat/auth/google/callback", name="chat_google_callback")
+def chat_google_callback(request: Request, code: str = "", state: str = ""):
+    expected_state = request.session.get("chat_google_oauth_state")
+    if not expected_state or expected_state != state:
+        return RedirectResponse(url="/chat?error=state", status_code=302)
+
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    redirect_uri = build_chat_google_redirect_uri(request)
+    token_payload = urlencode({
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "grant_type": "authorization_code",
+        "redirect_uri": redirect_uri,
+    }).encode()
+    token_request = UrlRequest(
+        "https://oauth2.googleapis.com/token",
+        data=token_payload,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        method="POST",
+    )
+    try:
+        token_data = json.loads(urlopen(token_request, timeout=15).read().decode())
+        access_token = token_data["access_token"]
+        profile_request = UrlRequest(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        profile = json.loads(urlopen(profile_request, timeout=15).read().decode())
+    except Exception:
+        return RedirectResponse(url="/chat?error=oauth_failed", status_code=302)
+
+    email = profile.get("email", "")
+    if not email:
+        return RedirectResponse(url="/chat?error=no_email", status_code=302)
+
+    request.session["chat_user"] = {
+        "uid": profile.get("sub", ""),
+        "email": email,
+        "name": profile.get("name") or email,
+        "photo": profile.get("picture", ""),
+    }
+    request.session.pop("chat_google_oauth_state", None)
+    return RedirectResponse(url="/chat", status_code=302)
+
+@app.post("/chat/auth/logout", name="chat_logout")
+def chat_logout(request: Request):
+    request.session.pop("chat_user", None)
+    return {"ok": True}
+
+@app.get("/api/chat/me")
+def chat_me(request: Request):
+    user = request.session.get("chat_user")
+    return {"user": user}
 
 @app.post("/api/chat")
 def chat_api(request: Request, payload: ChatRequest, db: Session = Depends(get_db)):
