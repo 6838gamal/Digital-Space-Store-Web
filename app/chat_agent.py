@@ -197,7 +197,7 @@ def build_gemini_reply(message: str, history: list[dict], store_context: str) ->
         contents.append(types.Content(role="user", parts=[types.Part(text=message)]))
 
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
@@ -205,9 +205,13 @@ def build_gemini_reply(message: str, history: list[dict], store_context: str) ->
                 temperature=0.7,
             ),
         )
-        return response.text.strip()
+        text = (response.text or "").strip()
+        if not text:
+            print("Gemini returned empty response")
+            return None
+        return text
     except Exception as e:
-        print(f"Gemini error: {e}")
+        print(f"Gemini error: {type(e).__name__}: {e}")
         return None
 
 
