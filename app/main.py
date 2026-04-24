@@ -242,59 +242,11 @@ def legacy_jewellery():
 
 @app.get("/chat", name="chat")
 def chat(request: Request):
-    client_id = os.getenv("GOOGLE_CLIENT_ID", "")
     return templates.TemplateResponse(
         request=request,
         name="chat.html",
-        context={
-            "google_client_id": client_id,
-            "google_ready": bool(client_id),
-        }
+        context={}
     )
-
-class GoogleCredential(BaseModel):
-    credential: str
-
-@app.post("/chat/auth/google/credential", name="chat_google_credential")
-def chat_google_credential(request: Request, payload: GoogleCredential):
-    client_id = os.getenv("GOOGLE_CLIENT_ID", "")
-    if not client_id:
-        return Response(content='{"ok":false,"error":"oauth_not_configured"}', status_code=400, media_type="application/json")
-
-    try:
-        from google.oauth2 import id_token as google_id_token
-        from google.auth.transport import requests as google_requests
-        info = google_id_token.verify_oauth2_token(
-            payload.credential,
-            google_requests.Request(),
-            client_id,
-        )
-    except Exception as e:
-        print(f"Google ID token verify failed: {e}")
-        return Response(content='{"ok":false,"error":"invalid_token"}', status_code=401, media_type="application/json")
-
-    email = info.get("email", "")
-    if not email or not info.get("email_verified", False):
-        return Response(content='{"ok":false,"error":"no_email"}', status_code=400, media_type="application/json")
-
-    user = {
-        "uid": info.get("sub", ""),
-        "email": email,
-        "name": info.get("name") or email,
-        "photo": info.get("picture", ""),
-    }
-    request.session["chat_user"] = user
-    return {"ok": True, "user": user}
-
-@app.post("/chat/auth/logout", name="chat_logout")
-def chat_logout(request: Request):
-    request.session.pop("chat_user", None)
-    return {"ok": True}
-
-@app.get("/api/chat/me")
-def chat_me(request: Request):
-    user = request.session.get("chat_user")
-    return {"user": user}
 
 @app.post("/api/chat")
 def chat_api(request: Request, payload: ChatRequest, db: Session = Depends(get_db)):
