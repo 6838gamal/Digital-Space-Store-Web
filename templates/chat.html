@@ -58,10 +58,44 @@
   @keyframes pulse-tts { 0%,100% { opacity:1; } 50% { opacity:.5; } }
 
   @keyframes floatBot { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+  /* ---- Inline sign-in banner inside chat ---- */
+  .chat-signin-banner {
+    margin: 14px auto; max-width: 520px; width: calc(100% - 28px);
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid rgba(148,163,184,.18); border-radius: 16px;
+    padding: 18px 18px 16px; text-align: center;
+    box-shadow: 0 6px 24px rgba(0,0,0,.25);
+  }
+  .chat-signin-banner .csb-icon { font-size: 32px; margin-bottom: 6px; }
+  .chat-signin-banner .csb-title { color: #f1f5f9; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .chat-signin-banner .csb-sub { color: #94a3b8; font-size: 12.5px; line-height: 1.6; margin-bottom: 12px; }
+  .chat-signin-banner .chat-auth-google-btn { margin: 0 auto; }
+  .chat-signin-banner #authError { margin-top: 10px; }
+
+  /* ---- Disabled chat input state ---- */
+  .chat-input-bar.is-locked { opacity: .55; }
+  .chat-input-bar.is-locked .chat-voice-btn,
+  .chat-input-bar.is-locked .chat-send-btn { cursor: not-allowed; }
+  .chat-input-bar.is-locked #userInput { cursor: not-allowed; background: rgba(148,163,184,.06); }
+  .chat-input-lock-shake { animation: lockShake .35s ease; }
+  @keyframes lockShake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  .chat-locked-toast {
+    position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%);
+    background: #1e293b; color: #f1f5f9; border: 1px solid rgba(148,163,184,.25);
+    padding: 10px 18px; border-radius: 999px; font-size: 13px; z-index: 300;
+    box-shadow: 0 6px 20px rgba(0,0,0,.35); opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s;
+  }
+  .chat-locked-toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
 </style>
 
-<!-- ===== AUTH GATE ===== -->
-<div id="chatAuthGate" class="chat-auth-gate">
+<!-- ===== AUTH GATE (legacy, kept hidden — sign-in is now inline) ===== -->
+<div id="chatAuthGate" class="chat-auth-gate" style="display:none;">
   <div class="chat-auth-gate-icon">🤖</div>
   <h2 data-en="AI Shopping Assistant" data-ar="وكيل التسوق الذكي">AI Shopping Assistant</h2>
   <p data-en="Subscribe with your Google account to start chatting with the AI assistant." data-ar="اشترك بحساب Google للوصول إلى وكيل الذكاء الاصطناعي.">
@@ -119,7 +153,7 @@
 <div id="chatDrawerOverlay"></div>
 
 <!-- ===== MAIN CHAT PAGE ===== -->
-<div class="chat-page-clean" id="chatMain" style="display:none;">
+<div class="chat-page-clean" id="chatMain">
   <div class="chat-topbar">
     <button class="chat-menu-btn" id="chatMenuBtn" aria-label="Open conversations">
       <span class="chat-menu-icon"><span></span><span></span><span></span></span>
@@ -129,6 +163,20 @@
       <div class="chat-topbar-sub" id="chatTopbarSub" data-en="Powered by Gemini AI" data-ar="مدعوم بـ Gemini AI">Powered by Gemini AI</div>
     </div>
     <a class="chat-back-btn" href="/" data-en="Store" data-ar="المتجر">Store</a>
+  </div>
+
+  <!-- Inline Google sign-in banner (visible only when not signed in) -->
+  <div id="chatSigninBanner" class="chat-signin-banner" style="display:none;">
+    <div class="csb-icon">🔒</div>
+    <div class="csb-title" data-en="Sign in to start chatting" data-ar="سجّل الدخول لبدء الدردشة">Sign in to start chatting</div>
+    <div class="csb-sub" data-en="Subscribe with your Google account to chat with the AI assistant and save your conversations." data-ar="اشترك بحساب Google للدردشة مع الوكيل الذكي وحفظ محادثاتك.">
+      Subscribe with your Google account to chat with the AI assistant and save your conversations.
+    </div>
+    <button type="button" class="chat-auth-google-btn" id="chatInlineSigninBtn">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.3 6.5 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.8 18.9 12 24 12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.3 6.5 29.4 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.6l6.2 5.2C37 36.5 44 31 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+      <span data-en="Sign in with Google" data-ar="تسجيل الدخول بـ Google">Sign in with Google</span>
+    </button>
+    <div id="inlineAuthError" style="display:none;color:#f87171;font-size:13px;margin-top:8px;"></div>
   </div>
 
   <div class="chat-messages-area" id="chatMessages">
@@ -149,12 +197,16 @@
     <button type="button" data-prompt-en="What can you do?" data-prompt-ar="ماذا تستطيع أن تفعل؟" data-en="Capabilities" data-ar="مزايا الوكيل">Capabilities</button>
   </div>
 
-  <form class="chat-input-bar" id="chatForm">
+  <div id="chatLockedToast" class="chat-locked-toast" data-en="Please sign in first to start chatting." data-ar="من فضلك سجّل الدخول أولاً لبدء الدردشة.">Please sign in first to start chatting.</div>
+
+  <form class="chat-input-bar is-locked" id="chatForm">
     <button type="button" class="chat-voice-btn" id="voiceBtn" title="Record voice">🎙️</button>
     <input type="text" id="userInput"
            data-en-placeholder="Type your message..." data-ar-placeholder="اكتب رسالتك أو سجّل صوتك..."
-           placeholder="Type your message..." autocomplete="off" />
-    <button type="submit" class="chat-send-btn" aria-label="Send">
+           data-locked-placeholder-en="Sign in to start chatting..."
+           data-locked-placeholder-ar="سجّل الدخول لبدء الدردشة..."
+           placeholder="Sign in to start chatting..." autocomplete="off" disabled />
+    <button type="submit" class="chat-send-btn" id="chatSendBtn" aria-label="Send" disabled>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="22" y1="2" x2="11" y2="13"></line>
         <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -206,6 +258,7 @@
 
   var form        = document.getElementById('chatForm');
   var input       = document.getElementById('userInput');
+  var sendBtn     = document.getElementById('chatSendBtn');
   var messages    = document.getElementById('chatMessages');
   var quickBar    = document.getElementById('quickPrompts');
   var convList    = document.getElementById('conversationList');
@@ -215,6 +268,10 @@
   var overlay     = document.getElementById('chatDrawerOverlay');
   var drawerClose = document.getElementById('chatDrawerClose');
   var voiceBtn    = document.getElementById('voiceBtn');
+  var signinBanner    = document.getElementById('chatSigninBanner');
+  var inlineSigninBtn = document.getElementById('chatInlineSigninBtn');
+  var inlineAuthError = document.getElementById('inlineAuthError');
+  var lockedToast     = document.getElementById('chatLockedToast');
 
   var SESSION_KEY = 'chatSubscriber';
 
@@ -239,6 +296,58 @@
     try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
   }
 
+  // ===== LOCK / UNLOCK CHAT INPUT =====
+  var lockedToastTimer = null;
+  function applyInputPlaceholder(locked) {
+    if (!input) return;
+    var lang = getLang();
+    if (locked) {
+      input.placeholder = input.getAttribute('data-locked-placeholder-' + lang)
+        || input.getAttribute('data-locked-placeholder-en')
+        || 'Sign in to start chatting...';
+    } else {
+      input.placeholder = input.getAttribute('data-' + lang + '-placeholder')
+        || input.getAttribute('data-en-placeholder')
+        || 'Type your message...';
+    }
+  }
+  function lockChat() {
+    if (form) form.classList.add('is-locked');
+    if (input) { input.disabled = true; input.value = ''; }
+    if (sendBtn) sendBtn.disabled = true;
+    if (voiceBtn) voiceBtn.setAttribute('aria-disabled', 'true');
+    if (signinBanner) signinBanner.style.display = 'block';
+    applyInputPlaceholder(true);
+  }
+  function unlockChat() {
+    if (form) form.classList.remove('is-locked');
+    if (input) input.disabled = false;
+    if (sendBtn) sendBtn.disabled = false;
+    if (voiceBtn) voiceBtn.removeAttribute('aria-disabled');
+    if (signinBanner) signinBanner.style.display = 'none';
+    applyInputPlaceholder(false);
+  }
+  function isChatLocked() {
+    return !chatUser;
+  }
+  function showLockedToast() {
+    if (form) {
+      form.classList.remove('chat-input-lock-shake');
+      void form.offsetWidth;
+      form.classList.add('chat-input-lock-shake');
+    }
+    if (!lockedToast) return;
+    var lang = getLang();
+    lockedToast.textContent = lockedToast.getAttribute('data-' + lang)
+      || lockedToast.getAttribute('data-en')
+      || 'Please sign in first to start chatting.';
+    lockedToast.classList.add('show');
+    if (lockedToastTimer) clearTimeout(lockedToastTimer);
+    lockedToastTimer = setTimeout(function() {
+      lockedToast.classList.remove('show');
+    }, 2200);
+  }
+
   // ===== AUTH UI =====
   function showSignedIn(user) {
     chatUser = user;
@@ -256,6 +365,7 @@
       drawerAvatar.innerHTML = '<img src="' + user.photo + '" style="width:34px;height:34px;border-radius:50%;object-fit:cover;" onerror="this.parentNode.textContent=\'👤\'">';
     }
     drawerUserStrip.style.display = 'block';
+    unlockChat();
   }
 
   function showGuest() {
@@ -263,14 +373,15 @@
     authStateGuest.style.display = 'block';
     authStateSigned.style.display = 'none';
     drawerUserStrip.style.display = 'none';
+    lockChat();
   }
 
-  // ===== ENTER CHAT =====
+  // ===== ENTER CHAT (chat is always visible now; this just loads conversations once signed in) =====
   window.enterChat = function() {
     chatEntered = true;
     authGate.style.display = 'none';
-    chatMain.style.display = 'flex';
-    loadConversations();
+    if (chatMain) chatMain.style.display = 'flex';
+    if (chatUser) loadConversations();
     // Apply lang to chat elements (applyLanguage lives in base.html, which loads after this script)
     if (typeof applyLanguage === 'function') {
       applyLanguage(getLang());
@@ -283,7 +394,13 @@
 
   // ===== GOOGLE SIGN IN =====
   window.chatGoogleSignIn = function() {
-    authError.style.display = 'none';
+    if (authError) authError.style.display = 'none';
+    if (inlineAuthError) inlineAuthError.style.display = 'none';
+    if (typeof firebase === 'undefined' || !firebase.auth || !firebase.auth.GoogleAuthProvider) {
+      var msg0 = getLang() === 'ar' ? 'تعذر تحميل خدمة تسجيل الدخول. حدّث الصفحة وحاول مرة أخرى.' : 'Sign-in service is not ready. Please refresh and try again.';
+      if (inlineAuthError) { inlineAuthError.textContent = msg0; inlineAuthError.style.display = 'block'; }
+      return;
+    }
     var provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('email');
     firebase.auth().signInWithPopup(provider)
@@ -292,6 +409,7 @@
         var user = { uid: u.uid, name: u.displayName || '', email: u.email || '', photo: u.photoURL || '' };
         saveSession(user);
         showSignedIn(user);
+        loadConversations();
 
         // Try to save to Firebase DB as subscriber (non-blocking — don't fail if denied)
         try {
@@ -302,9 +420,10 @@
         } catch(e) {}
       })
       .catch(function(err) {
-        if (err.code !== 'auth/popup-closed-by-user') {
-          authError.textContent = getLang() === 'ar' ? 'فشل تسجيل الدخول. حاول مرة أخرى.' : 'Sign-in failed. Please try again.';
-          authError.style.display = 'block';
+        if (err && err.code !== 'auth/popup-closed-by-user') {
+          var msg = getLang() === 'ar' ? 'فشل تسجيل الدخول. حاول مرة أخرى.' : 'Sign-in failed. Please try again.';
+          if (authError) { authError.textContent = msg; authError.style.display = 'block'; }
+          if (inlineAuthError) { inlineAuthError.textContent = msg; inlineAuthError.style.display = 'block'; }
         }
       });
   };
@@ -317,46 +436,52 @@
     });
   };
 
-  // ===== CHECK FIREBASE AUTH STATE + SESSION RESTORE =====
-  firebase.auth().onAuthStateChanged(function(firebaseUser) {
-    // Never kick the user out once they've entered the chat
-    if (chatEntered) return;
-
-    if (firebaseUser) {
-      var user = {
-        uid: firebaseUser.uid,
-        name: firebaseUser.displayName || '',
-        email: firebaseUser.email || '',
-        photo: firebaseUser.photoURL || ''
-      };
-      saveSession(user);
-      showSignedIn(user);
-      // Auto-enter chat without needing any button press
-      if (authGate.style.display !== 'none') {
-        enterChat();
-      }
-    } else {
-      // Try restoring from localStorage
-      var saved = loadSession();
-      if (saved) {
-        showSignedIn(saved);
-        if (authGate.style.display !== 'none') {
-          enterChat();
-        }
-      } else {
-        showGuest();
-      }
-    }
-  });
-
-  // Immediate localStorage restore — enter chat instantly with no flash
+  // Immediate localStorage restore — show signed-in state instantly with no flash.
+  // If no saved session, lock the chat and show the inline sign-in banner.
   (function() {
     var saved = loadSession();
     if (saved) {
       showSignedIn(saved);
       enterChat();
+    } else {
+      showGuest();
     }
   })();
+
+  // ===== CHECK FIREBASE AUTH STATE (after real Firebase SDK has loaded from base.html) =====
+  function attachFirebaseAuthListener() {
+    if (typeof firebase === 'undefined' || !firebase.auth) return;
+    try {
+      firebase.auth().onAuthStateChanged(function(firebaseUser) {
+        if (firebaseUser) {
+          var user = {
+            uid: firebaseUser.uid,
+            name: firebaseUser.displayName || '',
+            email: firebaseUser.email || '',
+            photo: firebaseUser.photoURL || ''
+          };
+          saveSession(user);
+          showSignedIn(user);
+          if (!chatEntered) enterChat();
+          else loadConversations();
+        } else if (!chatUser) {
+          // Only fall back to guest if we haven't already restored from localStorage
+          var saved = loadSession();
+          if (saved) {
+            showSignedIn(saved);
+            if (!chatEntered) enterChat();
+          } else {
+            showGuest();
+          }
+        }
+      });
+    } catch(e) {}
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachFirebaseAuthListener);
+  } else {
+    attachFirebaseAuthListener();
+  }
 
   // ===== DRAWER =====
   function openDrawer() {
@@ -560,6 +685,7 @@
 
   // ===== VOICE RECORDING =====
   voiceBtn.addEventListener('click', function() {
+    if (isChatLocked()) { showLockedToast(); return; }
     if (isRecording) {
       stopRecording();
     } else {
@@ -702,13 +828,37 @@
   // ===== EVENTS =====
   form.addEventListener('submit', function(e) {
     e.preventDefault();
+    if (isChatLocked()) { showLockedToast(); return; }
     sendMessage(input.value);
   });
 
+  // Show locked toast when guest clicks the disabled input area or send button
+  form.addEventListener('mousedown', function(e) {
+    if (isChatLocked()) {
+      e.preventDefault();
+      showLockedToast();
+    }
+  });
+  form.addEventListener('touchstart', function(e) {
+    if (isChatLocked()) {
+      e.preventDefault();
+      showLockedToast();
+    }
+  }, { passive: false });
+
   quickBar.addEventListener('click', function(e) {
     var btn = e.target.closest('button');
-    if (btn) sendMessage(getPromptText(btn));
+    if (!btn) return;
+    if (isChatLocked()) { showLockedToast(); return; }
+    sendMessage(getPromptText(btn));
   });
+
+  // Inline Google sign-in button inside the chat
+  if (inlineSigninBtn) {
+    inlineSigninBtn.addEventListener('click', function() {
+      window.chatGoogleSignIn();
+    });
+  }
 
   newConvBtn.addEventListener('click', async function() {
     try {
