@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.database import SessionLocal, engine
+from app.database import SessionLocal, engine, SQLALCHEMY_DATABASE_URL
 from app import models
 from app.chat_agent import build_agent_response, ensure_default_knowledge
 
@@ -50,10 +50,40 @@ def get_db():
 # ---------------------------
 # Startup (إنشاء الجداول + بيانات تجريبية)
 # ---------------------------
+def _migrate_participant_columns():
+    """Add new columns to store_participants if missing (safe on PG and SQLite)."""
+    from sqlalchemy import text
+    new_cols = [
+        ("photo_url",     "VARCHAR(500) DEFAULT ''"),
+        ("firebase_uid",  "VARCHAR(255) DEFAULT ''"),
+        ("provider",      "VARCHAR(50)  DEFAULT ''"),
+        ("phone",         "VARCHAR(50)  DEFAULT ''"),
+        ("locale",        "VARCHAR(20)  DEFAULT ''"),
+        ("subscribed_at", "TIMESTAMP NULL"),
+    ]
+    is_pg = not SQLALCHEMY_DATABASE_URL.startswith("sqlite")
+    with engine.begin() as conn:
+        for col, ddl in new_cols:
+            try:
+                if is_pg:
+                    conn.execute(text(f"ALTER TABLE store_participants ADD COLUMN IF NOT EXISTS {col} {ddl}"))
+                else:
+                    conn.execute(text(f"ALTER TABLE store_participants ADD COLUMN {col} {ddl}"))
+            except Exception:
+                # column already exists (sqlite path) — ignore
+                pass
+        # helpful index for lookups by Google uid
+        try:
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_store_participants_firebase_uid ON store_participants (firebase_uid)"))
+        except Exception:
+            pass
+
+
 @app.on_event("startup")
 def on_startup():
     try:
         models.Base.metadata.create_all(bind=engine)
+        _migrate_participant_columns()
 
         db = SessionLocal()
 
@@ -335,6 +365,58 @@ def get_chat_conversation(request: Request, conversation_id: int, db: Session = 
         ],
     }
 
+class SubscribePayload(BaseModel):
+    uid:      str  = Field(default="", max_length=255)
+    email:    str  = Field(default="", max_length=255)
+    name:     str  = Field(default="", max_length=255)
+    photo:    str  = Field(default="", max_length=500)
+    provider: str  = Field(default="google", max_length=50)
+    phone:    str  = Field(default="", max_length=50)
+    locale:   str  = Field(default="", max_length=20)
+
+
+@app.post("/api/subscribe")
+def api_subscribe(request: Request, payload: SubscribePayload, db: Session = Depends(get_db)):
+    """Record a Google-signed-in subscriber so they appear in the admin dashboard."""
+    if not (payload.uid or payload.email):
+        return {"ok": False, "error": "missing_identity"}
+
+    participant = get_or_create_participant(request, db)
+
+    # Prefer matching by firebase uid (stable), then email
+    existing = None
+    if payload.uid:
+        existing = db.query(models.StoreParticipant).filter(
+            models.StoreParticipant.firebase_uid == payload.uid
+        ).first()
+    if not existing and payload.email:
+        existing = db.query(models.StoreParticipant).filter(
+            models.StoreParticipant.email == payload.email
+        ).first()
+
+    target = existing if (existing and existing.id != participant.id) else participant
+
+    if payload.name:     target.display_name  = payload.name
+    if payload.email:    target.email         = payload.email
+    if payload.photo:    target.photo_url     = payload.photo
+    if payload.uid:      target.firebase_uid  = payload.uid
+    if payload.provider: target.provider      = payload.provider
+    if payload.phone:    target.phone         = payload.phone
+    if payload.locale:   target.locale        = payload.locale
+    if not target.subscribed_at:
+        target.subscribed_at = datetime.utcnow()
+    target.last_seen_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(target)
+    return {
+        "ok": True,
+        "participant_id": target.id,
+        "email": target.email,
+        "name":  target.display_name,
+    }
+
+
 @app.get("/api/chat/capabilities")
 def chat_capabilities():
     return {
@@ -488,6 +570,15 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     products = db.query(models.Product).order_by(models.Product.id.desc()).all()
     knowledge_items = db.query(models.KnowledgeItem).order_by(models.KnowledgeItem.id.desc()).all()
     participants = db.query(models.StoreParticipant).order_by(models.StoreParticipant.last_seen_at.desc()).all()
+    # Subscribers = participants who actually identified themselves (Google sign-in or email)
+    subscribers = [
+        p for p in participants
+        if (p.email and p.email.strip()) or (getattr(p, "firebase_uid", "") or "").strip()
+    ]
+    subscribers.sort(
+        key=lambda p: (getattr(p, "subscribed_at", None) or p.last_seen_at or p.created_at),
+        reverse=True,
+    )
     conversations = db.query(models.ChatConversation).order_by(models.ChatConversation.updated_at.desc()).limit(20).all()
     admins = db.query(models.AdminUser).order_by(models.AdminUser.created_at.desc()).all()
     response = templates.TemplateResponse(
@@ -498,6 +589,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
             "products": products,
             "knowledge_items": knowledge_items,
             "participants": participants,
+            "subscribers": subscribers,
             "conversations": conversations,
             "admins": admins,
         },

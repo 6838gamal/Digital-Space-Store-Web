@@ -51,6 +51,12 @@ class StoreParticipant(Base):
     session_key = Column(String(255), nullable=False, unique=True, index=True)
     display_name = Column(String(255), default="زائر المتجر")
     email = Column(String(255), default="")
+    photo_url = Column(String(500), default="")
+    firebase_uid = Column(String(255), default="", index=True)
+    provider = Column(String(50), default="")
+    phone = Column(String(50), default="")
+    locale = Column(String(20), default="")
+    subscribed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_seen_at = Column(DateTime, default=datetime.utcnow)
 

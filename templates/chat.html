@@ -291,8 +291,27 @@
   }
 
   // ===== PERSIST SESSION =====
+  var _lastSyncedUid = null;
   function saveSession(user) {
     try { localStorage.setItem(SESSION_KEY, JSON.stringify(user)); } catch(e) {}
+    // Sync subscriber to backend (once per uid per page load) so admin can see them
+    try {
+      if (user && (user.uid || user.email) && user.uid !== _lastSyncedUid) {
+        _lastSyncedUid = user.uid || user.email;
+        fetch('/api/subscribe', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            uid:   user.uid   || '',
+            email: user.email || '',
+            name:  user.name  || '',
+            photo: user.photo || '',
+            provider: 'google',
+            locale: getLang()
+          })
+        }).catch(function() {});
+      }
+    } catch(e) {}
   }
 
   function loadSession() {

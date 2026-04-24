@@ -467,6 +467,18 @@ function subscribeWithGoogle() {
       // Optimistically update the footer UI right away
       showSubscribeSignedIn({ name: name, email: email, photo: photo });
 
+      // Record subscriber in our backend so admin dashboard can see them
+      try {
+        fetch('/api/subscribe', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            uid: uid, email: email, name: name, photo: photo,
+            provider: 'google', locale: getCurrentLang()
+          })
+        }).catch(function() {});
+      } catch(e) {}
+
       // Best-effort write to Firebase RTDB; ignore failures so the UX is not blocked
       try {
         return firebase.database().ref('subscribers/' + uid).set({

@@ -400,9 +400,14 @@ table.adm-table tr:hover td { background: rgba(255,255,255,.025); }
         <span>المنتجات</span>
         <span class="adm-nav-badge">{{ products | length }}</span>
       </a>
+      <a href="#" class="adm-nav-item" data-section="subscribers">
+        <span class="adm-nav-icon">📧</span>
+        <span>المشتركون</span>
+        <span class="adm-nav-badge">{{ subscribers | length }}</span>
+      </a>
       <a href="#" class="adm-nav-item" data-section="participants">
         <span class="adm-nav-icon">👥</span>
-        <span>المشاركون</span>
+        <span>الزوار</span>
         <span class="adm-nav-badge">{{ participants | length }}</span>
       </a>
       <a href="#" class="adm-nav-item" data-section="rag">
@@ -467,6 +472,11 @@ table.adm-table tr:hover td { background: rgba(255,255,255,.025); }
             <div class="stat-icon">✅</div>
             <div class="stat-value">{{ products | selectattr('is_active') | list | length }}</div>
             <div class="stat-label">منتجات نشطة</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📧</div>
+            <div class="stat-value">{{ subscribers | length }}</div>
+            <div class="stat-label">المشتركون</div>
           </div>
           <div class="stat-card">
             <div class="stat-icon">👥</div>
@@ -593,13 +603,109 @@ table.adm-table tr:hover td { background: rgba(255,255,255,.025); }
       </section>
 
       <!-- ══════════════════════════════
-           PARTICIPANTS
+           SUBSCRIBERS  (Google sign-in / identified users)
+      ══════════════════════════════ -->
+      <section class="adm-section" id="section-subscribers">
+        <div class="adm-page-header">
+          <div>
+            <div class="adm-page-title">📧 المشتركون</div>
+            <div class="adm-page-sub">{{ subscribers | length }} حساب مسجّل عبر Google — معلومات التواصل</div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a class="btn btn-secondary" href="#"
+               id="exportSubscribersBtn"
+               onclick="exportSubscribersCSV(event)">
+              ⬇️ تصدير CSV
+            </a>
+          </div>
+        </div>
+
+        <div class="adm-card" style="padding:0;overflow:hidden;">
+          <div class="adm-table-wrap">
+            <table class="adm-table" id="subscribersTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>الحساب</th>
+                  <th>البريد الإلكتروني</th>
+                  <th>الهاتف</th>
+                  <th>المصدر</th>
+                  <th>المحادثات</th>
+                  <th>الاشتراك في</th>
+                  <th>آخر ظهور</th>
+                  <th>إجراء</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in subscribers %}
+                <tr data-name="{{ s.display_name or '' }}"
+                    data-email="{{ s.email or '' }}"
+                    data-phone="{{ s.phone or '' }}"
+                    data-provider="{{ s.provider or 'google' }}"
+                    data-subscribed="{{ s.subscribed_at.strftime('%Y-%m-%d %H:%M') if s.subscribed_at else '' }}"
+                    data-lastseen="{{ s.last_seen_at.strftime('%Y-%m-%d %H:%M') if s.last_seen_at else '' }}"
+                    data-conv="{{ conversations | selectattr('participant_id', 'equalto', s.id) | list | length }}">
+                  <td><span class="adm-badge adm-badge-gray">#{{ s.id }}</span></td>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      {% if s.photo_url %}
+                        <img src="{{ s.photo_url }}" alt="" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid #334155;" onerror="this.outerHTML='<div style=\'width:34px;height:34px;border-radius:50%;background:#334155;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;\'>👤</div>'">
+                      {% else %}
+                        <div style="width:34px;height:34px;border-radius:50%;background:#334155;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">👤</div>
+                      {% endif %}
+                      <div style="min-width:0;">
+                        <div style="font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">{{ s.display_name or '—' }}</div>
+                        {% if s.firebase_uid %}<div style="font-size:10.5px;color:#64748b;font-family:monospace;">{{ s.firebase_uid[:14] }}…</div>{% endif %}
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    {% if s.email %}
+                      <a href="mailto:{{ s.email }}" style="color:#60a5fa;text-decoration:none;">{{ s.email }}</a>
+                    {% else %}<span style="color:#475569;">—</span>{% endif %}
+                  </td>
+                  <td>
+                    {% if s.phone %}
+                      <a href="tel:{{ s.phone }}" style="color:#60a5fa;text-decoration:none;font-family:monospace;">{{ s.phone }}</a>
+                    {% else %}<span style="color:#475569;">—</span>{% endif %}
+                  </td>
+                  <td>
+                    {% if s.provider == 'google' or s.firebase_uid %}
+                      <span class="adm-badge adm-badge-green">Google</span>
+                    {% else %}
+                      <span class="adm-badge adm-badge-gray">{{ s.provider or 'يدوي' }}</span>
+                    {% endif %}
+                  </td>
+                  <td><span class="adm-badge adm-badge-blue">{{ conversations | selectattr('participant_id', 'equalto', s.id) | list | length }}</span></td>
+                  <td style="font-size:12px;color:#94a3b8;white-space:nowrap;">
+                    {{ s.subscribed_at.strftime('%Y-%m-%d %H:%M') if s.subscribed_at else '—' }}
+                  </td>
+                  <td style="font-size:12px;color:#64748b;white-space:nowrap;">
+                    {{ s.last_seen_at.strftime('%Y-%m-%d %H:%M') if s.last_seen_at else '—' }}
+                  </td>
+                  <td>
+                    {% if s.email %}
+                      <a class="btn btn-secondary" style="padding:5px 10px;font-size:12px;" href="mailto:{{ s.email }}">✉️ مراسلة</a>
+                    {% else %}<span style="color:#475569;">—</span>{% endif %}
+                  </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="9" class="adm-empty">لا يوجد مشتركون بعد. عندما يسجّل الزوار دخولهم بـ Google من الفوتر أو صفحة الدردشة سيظهرون هنا.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════
+           PARTICIPANTS  (all visitors, including anonymous)
       ══════════════════════════════ -->
       <section class="adm-section" id="section-participants">
         <div class="adm-page-header">
           <div>
-            <div class="adm-page-title">👥 المشاركون</div>
-            <div class="adm-page-sub">{{ participants | length }} زائر / مشترك</div>
+            <div class="adm-page-title">👥 الزوار</div>
+            <div class="adm-page-sub">{{ participants | length }} جلسة زيارة (بما فيها المجهولة)</div>
           </div>
         </div>
 
@@ -611,7 +717,9 @@ table.adm-table tr:hover td { background: rgba(255,255,255,.025); }
                   <th>المعرّف</th>
                   <th>الاسم</th>
                   <th>البريد الإلكتروني</th>
+                  <th>المصدر</th>
                   <th>المحادثات</th>
+                  <th>أول ظهور</th>
                   <th>آخر ظهور</th>
                 </tr>
               </thead>
@@ -620,18 +728,56 @@ table.adm-table tr:hover td { background: rgba(255,255,255,.025); }
                 <tr>
                   <td><span class="adm-badge adm-badge-gray">#{{ p.id }}</span></td>
                   <td style="font-weight:600;color:#f1f5f9;">{{ p.display_name or '—' }}</td>
-                  <td style="color:#94a3b8;">{{ p.email or 'زائر مجهول' }}</td>
+                  <td style="color:#94a3b8;">
+                    {% if p.email %}<a href="mailto:{{ p.email }}" style="color:#60a5fa;text-decoration:none;">{{ p.email }}</a>{% else %}<span style="color:#475569;">زائر مجهول</span>{% endif %}
+                  </td>
+                  <td>
+                    {% if p.firebase_uid or p.provider == 'google' %}
+                      <span class="adm-badge adm-badge-green">Google</span>
+                    {% elif p.email %}
+                      <span class="adm-badge adm-badge-blue">يدوي</span>
+                    {% else %}
+                      <span class="adm-badge adm-badge-gray">مجهول</span>
+                    {% endif %}
+                  </td>
                   <td><span class="adm-badge adm-badge-blue">{{ conversations | selectattr("participant_id", "equalto", p.id) | list | length }}</span></td>
-                  <td style="font-size:12px;color:#64748b;">{{ p.last_seen_at.strftime('%Y-%m-%d %H:%M') if p.last_seen_at else '—' }}</td>
+                  <td style="font-size:12px;color:#64748b;white-space:nowrap;">{{ p.created_at.strftime('%Y-%m-%d %H:%M') if p.created_at else '—' }}</td>
+                  <td style="font-size:12px;color:#64748b;white-space:nowrap;">{{ p.last_seen_at.strftime('%Y-%m-%d %H:%M') if p.last_seen_at else '—' }}</td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" class="adm-empty">لا يوجد زوار بعد.</td></tr>
+                <tr><td colspan="7" class="adm-empty">لا يوجد زوار بعد.</td></tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
         </div>
       </section>
+
+      <script>
+        function exportSubscribersCSV(ev) {
+          ev.preventDefault();
+          var rows = document.querySelectorAll('#subscribersTable tbody tr[data-email]');
+          var lines = ['name,email,phone,provider,subscribed_at,last_seen,conversations'];
+          rows.forEach(function(r) {
+            var fields = ['name','email','phone','provider','subscribed','lastseen','conv'];
+            var line = fields.map(function(f) {
+              var v = (r.getAttribute('data-' + f) || '').replace(/"/g, '""');
+              return '"' + v + '"';
+            }).join(',');
+            lines.push(line);
+          });
+          var csv = lines.join('\n');
+          var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'subscribers-' + new Date().toISOString().slice(0,10) + '.csv';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+      </script>
 
       <!-- ══════════════════════════════
            AGENT TRAINING (RAG)
