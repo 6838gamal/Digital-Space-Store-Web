@@ -28,15 +28,20 @@
         </button>
       </div>
 
-      <!-- Post-subscribe success -->
+      <!-- Post-subscribe success / signed-in state -->
       <div id="subscribe-state-post" style="display:none">
         <div class="subscribe-success">
-          <span class="subscribe-success-icon">✅</span>
-          <div>
-            <strong data-en="Subscribed!" data-ar="تم الاشتراك!">Subscribed!</strong>
-            <p data-en="Thank you! Redirecting you back..." data-ar="شكراً! جارٍ التوجيه...">Thank you! Redirecting you back...</p>
+          <div class="subscribe-success-avatar" id="subscribe-success-avatar">👤</div>
+          <div class="subscribe-success-info">
+            <strong id="subscribe-success-name" data-en="Subscribed!" data-ar="تم الاشتراك!">Subscribed!</strong>
+            <p id="subscribe-success-email"
+               data-en="Thanks for subscribing — you're all set."
+               data-ar="شكراً لاشتراكك — كل شيء جاهز.">Thanks for subscribing — you're all set.</p>
           </div>
         </div>
+        <button type="button" id="subscribeSignOutBtn" class="subscribe-signout-btn"
+                onclick="subscribeSignOut()"
+                data-en="Sign out" data-ar="تسجيل الخروج">Sign out</button>
       </div>
 
     </div>

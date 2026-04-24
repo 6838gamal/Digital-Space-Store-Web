@@ -382,13 +382,68 @@ document.getElementById('adminEmailInput').addEventListener('keydown', function(
   if (e.key === 'Escape') closeAdminModal();
 });
 
+// ===== FOOTER SUBSCRIBE STATE HELPERS =====
+function getSubscribeBtnLabel() {
+  var lang = getCurrentLang();
+  var btn = document.getElementById('subscribeGoogleBtn');
+  if (!btn) return '';
+  // Re-render the original button content (icon + label) using its data-en/data-ar children
+  return btn.innerHTML;
+}
+
+function showSubscribeSignedIn(profile) {
+  var pre  = document.getElementById('subscribe-state-pre');
+  var post = document.getElementById('subscribe-state-post');
+  var nameEl   = document.getElementById('subscribe-success-name');
+  var emailEl  = document.getElementById('subscribe-success-email');
+  var avatarEl = document.getElementById('subscribe-success-avatar');
+  if (pre)  pre.style.display  = 'none';
+  if (post) post.style.display = 'block';
+  if (nameEl) {
+    nameEl.textContent = profile && profile.name
+      ? profile.name
+      : (getCurrentLang() === 'ar' ? 'مشترك ✓' : 'Subscribed ✓');
+  }
+  if (emailEl) {
+    if (profile && profile.email) {
+      emailEl.textContent = profile.email;
+    } else {
+      emailEl.textContent = (getCurrentLang() === 'ar'
+        ? 'شكراً لاشتراكك — كل شيء جاهز.'
+        : "Thanks for subscribing — you're all set.");
+    }
+  }
+  if (avatarEl) {
+    if (profile && profile.photo) {
+      avatarEl.innerHTML = '<img src="' + profile.photo + '" alt="" onerror="this.parentNode.textContent=\'👤\'">';
+    } else {
+      avatarEl.textContent = '👤';
+    }
+  }
+}
+
+function showSubscribePre() {
+  var pre  = document.getElementById('subscribe-state-pre');
+  var post = document.getElementById('subscribe-state-post');
+  if (pre)  pre.style.display  = 'block';
+  if (post) post.style.display = 'none';
+  var btn = document.getElementById('subscribeGoogleBtn');
+  if (btn) btn.disabled = false;
+}
+
 // ===== GOOGLE SUBSCRIBE (Footer) =====
 function subscribeWithGoogle() {
   var btn = document.getElementById('subscribeGoogleBtn');
+  var originalHTML = btn ? btn.innerHTML : '';
   if (btn) {
     btn.disabled = true;
     var lang = getCurrentLang();
     btn.innerHTML = '⏳ ' + (lang === 'ar' ? 'جارٍ الاتصال...' : 'Connecting...');
+  }
+
+  if (typeof firebase === 'undefined' || !firebase.auth || !firebase.auth.GoogleAuthProvider) {
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
+    return;
   }
 
   var provider = new firebase.auth.GoogleAuthProvider();
@@ -409,32 +464,46 @@ function subscribeWithGoogle() {
         }));
       } catch(e) {}
 
-      return firebase.database().ref('subscribers/' + uid).set({
-        email:        email,
-        name:         name,
-        subscribedAt: Date.now(),
-        lang:         getCurrentLang()
-      });
-    })
-    .then(function() {
-      var pre  = document.getElementById('subscribe-state-pre');
-      var post = document.getElementById('subscribe-state-post');
-      if (pre)  pre.style.display  = 'none';
-      if (post) post.style.display = 'flex';
+      // Optimistically update the footer UI right away
+      showSubscribeSignedIn({ name: name, email: email, photo: photo });
 
-      // Redirect to home after 2 seconds
-      setTimeout(function() { window.location.href = '/'; }, 2000);
+      // Best-effort write to Firebase RTDB; ignore failures so the UX is not blocked
+      try {
+        return firebase.database().ref('subscribers/' + uid).set({
+          email:        email,
+          name:         name,
+          subscribedAt: Date.now(),
+          lang:         getCurrentLang()
+        }).catch(function() {});
+      } catch(e) {}
     })
     .catch(function(error) {
       if (btn) {
         btn.disabled = false;
-        var lang2 = getCurrentLang();
-        btn.innerHTML = (lang2 === 'ar' ? '🔔 اشترك بـ Google' : '🔔 Subscribe with Google');
+        btn.innerHTML = originalHTML;
       }
-      if (error.code !== 'auth/popup-closed-by-user') {
+      if (error && error.code !== 'auth/popup-closed-by-user') {
         console.error('Subscribe error:', error.code);
       }
     });
+}
+
+// ===== GOOGLE SIGN OUT (Footer) =====
+function subscribeSignOut() {
+  var btn = document.getElementById('subscribeSignOutBtn');
+  if (btn) btn.disabled = true;
+  var done = function() {
+    try { localStorage.removeItem('chatSubscriber'); } catch(e) {}
+    showSubscribePre();
+    if (btn) btn.disabled = false;
+  };
+  if (typeof firebase !== 'undefined' && firebase.auth) {
+    try {
+      firebase.auth().signOut().then(done).catch(done);
+    } catch(e) { done(); }
+  } else {
+    done();
+  }
 }
 
 // ===== SIDEBAR SUBMENU TOGGLE =====
@@ -462,27 +531,37 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ===== AUTO-UPDATE FOOTER SUBSCRIBE STATE =====
-// If user is already signed in (returning visitor), show "Subscribed" in footer
+// If user is already signed in (returning visitor), show signed-in card in footer.
+// Restore from localStorage immediately for a flicker-free experience, then sync with Firebase.
+(function() {
+  try {
+    var raw = localStorage.getItem('chatSubscriber');
+    if (raw) {
+      var saved = JSON.parse(raw);
+      if (saved && (saved.email || saved.name)) showSubscribeSignedIn(saved);
+    }
+  } catch(e) {}
+})();
+
 if (typeof firebase !== 'undefined' && firebase.auth) {
   firebase.auth().onAuthStateChanged(function(user) {
-    var pre  = document.getElementById('subscribe-state-pre');
-    var post = document.getElementById('subscribe-state-post');
-    if (!pre || !post) return;
+    if (!document.getElementById('subscribe-state-pre')) return;
     if (user) {
-      pre.style.display  = 'none';
-      post.style.display = 'flex';
-      // Also save to chatSubscriber if not already set
+      var profile = {
+        uid: user.uid,
+        name: user.displayName || '',
+        email: user.email || '',
+        photo: user.photoURL || ''
+      };
       try {
-        if (!localStorage.getItem('chatSubscriber')) {
-          localStorage.setItem('chatSubscriber', JSON.stringify({
-            uid: user.uid, name: user.displayName || '',
-            email: user.email || '', photo: user.photoURL || ''
-          }));
-        }
+        localStorage.setItem('chatSubscriber', JSON.stringify(profile));
       } catch(e) {}
+      showSubscribeSignedIn(profile);
     } else {
-      pre.style.display  = 'block';
-      post.style.display = 'none';
+      // Only fall back to "pre" if there's also nothing in localStorage
+      var raw = null;
+      try { raw = localStorage.getItem('chatSubscriber'); } catch(e) {}
+      if (!raw) showSubscribePre();
     }
   });
 }
