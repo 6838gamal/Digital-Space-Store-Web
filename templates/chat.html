@@ -271,8 +271,14 @@
     authGate.style.display = 'none';
     chatMain.style.display = 'flex';
     loadConversations();
-    // Apply lang to chat elements
-    applyLanguage(getLang());
+    // Apply lang to chat elements (applyLanguage lives in base.html, which loads after this script)
+    if (typeof applyLanguage === 'function') {
+      applyLanguage(getLang());
+    } else {
+      window.addEventListener('DOMContentLoaded', function() {
+        if (typeof applyLanguage === 'function') applyLanguage(getLang());
+      });
+    }
   };
 
   // ===== GOOGLE SIGN IN =====
