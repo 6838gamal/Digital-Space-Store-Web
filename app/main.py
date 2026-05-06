@@ -16,7 +16,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.database import SessionLocal, engine, SQLALCHEMY_DATABASE_URL
 from app import models
-from app.chat_agent import build_agent_response, ensure_default_knowledge
+from app.chat_agent import build_agent_response, ensure_default_knowledge, update_participant_insight
 
 app = FastAPI(title="Gamal Store Backend")
 app.add_middleware(
@@ -316,6 +316,8 @@ def chat_api(request: Request, payload: ChatRequest, db: Session = Depends(get_d
         conversation.title = payload.message[:60]
     db.commit()
 
+    update_participant_insight(participant.id, payload.message, response, db)
+
     response["conversation_id"] = conversation.id
     response["conversation_title"] = conversation.title
     return response
@@ -580,13 +582,13 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         reverse=True,
     )
     conversations = db.query(models.ChatConversation).order_by(models.ChatConversation.updated_at.desc()).limit(20).all()
-    # Chat participants: participants who have at least one conversation, ordered by last activity
-    chat_participant_ids = {c.participant_id for c in conversations}
     all_conv = db.query(models.ChatConversation).all()
     all_chat_participant_ids = {c.participant_id for c in all_conv}
     chat_participants = db.query(models.StoreParticipant).filter(
         models.StoreParticipant.id.in_(all_chat_participant_ids)
     ).order_by(models.StoreParticipant.last_seen_at.desc()).all()
+    insights = db.query(models.ParticipantInsight).all()
+    insights_map = {ins.participant_id: ins for ins in insights}
     response = templates.TemplateResponse(
         request=request,
         name="admin.html",
@@ -598,11 +600,59 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
             "subscribers": subscribers,
             "conversations": conversations,
             "chat_participants": chat_participants,
+            "insights_map": insights_map,
         },
     )
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
     return response
+
+@app.get("/admin/participant/{participant_id}")
+def admin_participant_detail(request: Request, participant_id: int, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    participant = db.query(models.StoreParticipant).filter(models.StoreParticipant.id == participant_id).first()
+    if not participant:
+        return {"error": "not found"}
+    insight = db.query(models.ParticipantInsight).filter(
+        models.ParticipantInsight.participant_id == participant_id
+    ).first()
+    convs = db.query(models.ChatConversation).filter(
+        models.ChatConversation.participant_id == participant_id
+    ).order_by(models.ChatConversation.updated_at.desc()).all()
+    conv_data = []
+    for conv in convs:
+        msgs = db.query(models.ChatMessageRecord).filter(
+            models.ChatMessageRecord.conversation_id == conv.id
+        ).order_by(models.ChatMessageRecord.created_at.asc()).all()
+        conv_data.append({
+            "id": conv.id,
+            "title": conv.title,
+            "updated_at": conv.updated_at.isoformat() if conv.updated_at else "",
+            "messages": [{"role": m.role, "content": m.content} for m in msgs],
+        })
+    return {
+        "participant": {
+            "id": participant.id,
+            "name": participant.display_name,
+            "email": participant.email,
+            "phone": participant.phone,
+            "photo_url": participant.photo_url,
+            "provider": participant.provider,
+            "created_at": participant.created_at.isoformat() if participant.created_at else "",
+            "last_seen_at": participant.last_seen_at.isoformat() if participant.last_seen_at else "",
+        },
+        "insight": {
+            "summary": insight.summary if insight else "",
+            "interested_products": insight.interested_products if insight else "",
+            "interested_categories": insight.interested_categories if insight else "",
+            "intents_seen": insight.intents_seen if insight else "",
+            "message_count": insight.message_count if insight else 0,
+            "updated_at": insight.updated_at.isoformat() if insight and insight.updated_at else "",
+        },
+        "conversations": conv_data,
+    }
 
 @app.post("/admin/products")
 def admin_create_product(

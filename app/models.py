@@ -77,3 +77,15 @@ class ChatMessageRecord(Base):
     role = Column(String(50), nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class ParticipantInsight(Base):
+    __tablename__ = "participant_insights"
+
+    id = Column(Integer, primary_key=True, index=True)
+    participant_id = Column(Integer, ForeignKey("store_participants.id"), unique=True, index=True)
+    summary = Column(Text, default="")
+    interested_products = Column(Text, default="")
+    interested_categories = Column(Text, default="")
+    intents_seen = Column(Text, default="")
+    message_count = Column(Integer, default=0)
+    updated_at = Column(DateTime, default=datetime.utcnow)

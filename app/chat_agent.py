@@ -215,6 +215,100 @@ def build_gemini_reply(message: str, history: list[dict], store_context: str) ->
         return None
 
 
+def _build_gemini_insight(messages: list[str], api_key: str) -> str | None:
+    try:
+        from google import genai
+        from google.genai import types
+        client = genai.Client(api_key=api_key)
+        convo = "\n".join(f"- {m}" for m in messages[-15:])
+        prompt = f"بناءً على رسائل هذا العميل في المتجر، اكتب خلاصة مختصرة (سطرين كحد أقصى) تصف ما يبحث عنه أو يريده:\n{convo}"
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[types.Content(role="user", parts=[types.Part(text=prompt)])],
+            config=types.GenerateContentConfig(max_output_tokens=200, temperature=0.4),
+        )
+        return (response.text or "").strip() or None
+    except Exception:
+        return None
+
+
+def update_participant_insight(participant_id: int, message: str, response: dict, db: Session) -> None:
+    from app import models
+    try:
+        insight = db.query(models.ParticipantInsight).filter(
+            models.ParticipantInsight.participant_id == participant_id
+        ).first()
+        if not insight:
+            insight = models.ParticipantInsight(participant_id=participant_id)
+            db.add(insight)
+
+        # --- update products ---
+        existing_products = set(p.strip() for p in (insight.interested_products or "").split(",") if p.strip())
+        for match in response.get("matches", []):
+            if match.get("source_type") == "product" and match.get("title"):
+                existing_products.add(match["title"])
+        insight.interested_products = ", ".join(sorted(existing_products)[:10])
+
+        # --- update categories ---
+        existing_cats = set(c.strip() for c in (insight.interested_categories or "").split(",") if c.strip())
+        for match in response.get("matches", []):
+            cat = (match.get("metadata") or {}).get("category", "")
+            if cat:
+                existing_cats.add(cat)
+        insight.interested_categories = ", ".join(sorted(existing_cats)[:6])
+
+        # --- update intents ---
+        intent = response.get("intent", "")
+        existing_intents = set(i.strip() for i in (insight.intents_seen or "").split(",") if i.strip())
+        if intent and intent != "general":
+            existing_intents.add(intent)
+        insight.intents_seen = ", ".join(sorted(existing_intents))
+
+        insight.message_count = (insight.message_count or 0) + 1
+        insight.updated_at = __import__("datetime").datetime.utcnow()
+
+        # --- build summary ---
+        api_key = __import__("os").getenv("GEMINI_API_KEY", "")
+        gemini_summary = None
+        if api_key and insight.message_count % 5 == 1:
+            all_msgs = db.query(models.ChatMessageRecord).join(
+                models.ChatConversation,
+                models.ChatMessageRecord.conversation_id == models.ChatConversation.id
+            ).filter(
+                models.ChatConversation.participant_id == participant_id,
+                models.ChatMessageRecord.role == "user"
+            ).order_by(models.ChatMessageRecord.created_at.desc()).limit(20).all()
+            user_texts = [m.content for m in reversed(all_msgs)]
+            gemini_summary = _build_gemini_insight(user_texts, api_key)
+
+        if gemini_summary:
+            insight.summary = gemini_summary
+        else:
+            parts = []
+            if insight.interested_products:
+                parts.append(f"اهتمام بـ: {insight.interested_products}")
+            if insight.interested_categories:
+                parts.append(f"تصنيفات: {insight.interested_categories}")
+            intent_labels = {
+                "product_search": "بحث عن منتجات",
+                "cart": "سلة المشتريات",
+                "checkout": "إتمام الشراء",
+                "orders": "تتبع الطلبات",
+                "profile": "إدارة الحساب",
+                "capabilities": "استفسار عام",
+            }
+            shown = [intent_labels[i] for i in (insight.intents_seen or "").split(",") if i.strip() in intent_labels]
+            if shown:
+                parts.append(f"نوايا: {', '.join(shown[:3])}")
+            if not parts:
+                parts = ["زيارة استكشافية"]
+            insight.summary = " | ".join(parts)
+
+        db.commit()
+    except Exception as e:
+        print(f"Insight update error: {e}")
+
+
 def build_agent_response(message: str, db: Session, history: list[dict] | None = None) -> dict[str, Any]:
     if history is None:
         history = []
