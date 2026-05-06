@@ -849,6 +849,228 @@ async def transcribe_audio(
 
 
 # ============================================================
+# PUBLISHING SCHEDULER — API routes
+# ============================================================
+
+PUBLISH_CHANNELS = [
+    {"slug": "whatsapp",  "name": "واتساب",    "icon": "💬", "color": "#25D366"},
+    {"slug": "telegram",  "name": "تيليغرام",  "icon": "✈️", "color": "#2AABEE"},
+    {"slug": "instagram", "name": "إنستغرام",  "icon": "📸", "color": "#E1306C"},
+    {"slug": "tiktok",    "name": "تيك توك",   "icon": "🎵", "color": "#1a1a1a"},
+    {"slug": "facebook",  "name": "فيسبوك",    "icon": "👍", "color": "#1877F2"},
+    {"slug": "twitter",   "name": "تويتر / X", "icon": "🐦", "color": "#1DA1F2"},
+    {"slug": "youtube",   "name": "يوتيوب",    "icon": "▶️", "color": "#FF0000"},
+    {"slug": "snapchat",  "name": "سناب شات",  "icon": "👻", "color": "#f5c518"},
+    {"slug": "linkedin",  "name": "لينكدإن",   "icon": "💼", "color": "#0A66C2"},
+    {"slug": "threads",   "name": "ثريدز",     "icon": "🧵", "color": "#101010"},
+]
+
+
+def _schedule_to_dict(s: models.PublishSchedule, targets: list) -> dict:
+    return {
+        "id": s.id,
+        "title": s.title,
+        "base_content": s.base_content,
+        "status": s.status,
+        "scheduled_at": s.scheduled_at.strftime("%Y-%m-%dT%H:%M") if s.scheduled_at else "",
+        "scheduled_at_display": s.scheduled_at.strftime("%Y-%m-%d %H:%M") if s.scheduled_at else "—",
+        "notes": s.notes,
+        "source_id": s.source_id,
+        "created_at": s.created_at.strftime("%Y-%m-%d %H:%M"),
+        "updated_at": s.updated_at.strftime("%Y-%m-%d %H:%M"),
+        "targets": [
+            {
+                "id": t.id,
+                "channel_slug": t.channel_slug,
+                "channel_name": t.channel_name,
+                "channel_icon": t.channel_icon,
+                "channel_color": t.channel_color,
+                "customized_text": t.customized_text,
+                "with_hashtags": t.with_hashtags,
+                "hashtags": t.hashtags,
+                "status": t.status,
+                "published_at": t.published_at.strftime("%Y-%m-%d %H:%M") if t.published_at else "",
+                "error_msg": t.error_msg,
+            } for t in targets
+        ],
+    }
+
+
+@app.get("/admin/api/publish/channels")
+def publish_channels(request: Request, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    return PUBLISH_CHANNELS
+
+
+@app.get("/admin/api/publish/generated")
+def publish_generated(request: Request, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    items = db.query(models.GeneratedContent).order_by(models.GeneratedContent.created_at.desc()).limit(30).all()
+    return [{"id": i.id, "topic": i.topic, "content_type": i.content_type, "content": i.content, "created_at": i.created_at.strftime("%Y-%m-%d %H:%M")} for i in items]
+
+
+@app.post("/admin/api/publish/schedules")
+async def publish_create(request: Request, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    body = await request.json()
+
+    base_content = (body.get("base_content") or "").strip()
+    if not base_content:
+        return {"error": "المحتوى مطلوب."}
+
+    sched_str = (body.get("scheduled_at") or "").strip()
+    sched_dt = None
+    if sched_str:
+        try:
+            sched_dt = datetime.fromisoformat(sched_str)
+        except Exception:
+            pass
+
+    status = body.get("status", "draft")
+    if sched_dt and status == "draft":
+        status = "scheduled"
+
+    schedule = models.PublishSchedule(
+        title=(body.get("title") or base_content[:80]),
+        base_content=base_content,
+        status=status,
+        scheduled_at=sched_dt,
+        notes=body.get("notes", ""),
+        source_id=body.get("source_id"),
+    )
+    db.add(schedule)
+    db.flush()
+
+    targets_data = body.get("targets", [])
+    created_targets = []
+    for t in targets_data:
+        slug = t.get("channel_slug", "")
+        ch_info = next((c for c in PUBLISH_CHANNELS if c["slug"] == slug), {})
+        target = models.PublishTarget(
+            schedule_id=schedule.id,
+            channel_slug=slug,
+            channel_name=t.get("channel_name") or ch_info.get("name", slug),
+            channel_icon=t.get("channel_icon") or ch_info.get("icon", "📢"),
+            channel_color=t.get("channel_color") or ch_info.get("color", "#64748b"),
+            customized_text=t.get("customized_text", ""),
+            with_hashtags=bool(t.get("with_hashtags", False)),
+            hashtags=t.get("hashtags", ""),
+            status="pending",
+        )
+        db.add(target)
+        created_targets.append(target)
+
+    db.commit()
+    db.refresh(schedule)
+    for t in created_targets:
+        db.refresh(t)
+
+    return _schedule_to_dict(schedule, created_targets)
+
+
+@app.get("/admin/api/publish/schedules")
+def publish_list(request: Request, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    schedules = db.query(models.PublishSchedule).order_by(models.PublishSchedule.created_at.desc()).all()
+    result = []
+    for s in schedules:
+        targets = db.query(models.PublishTarget).filter(models.PublishTarget.schedule_id == s.id).all()
+        result.append(_schedule_to_dict(s, targets))
+    return result
+
+
+@app.get("/admin/api/publish/stats")
+def publish_stats(request: Request, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    total = db.query(models.PublishSchedule).count()
+    scheduled = db.query(models.PublishSchedule).filter(models.PublishSchedule.status == "scheduled").count()
+    published = db.query(models.PublishSchedule).filter(models.PublishSchedule.status == "published").count()
+    drafts = db.query(models.PublishSchedule).filter(models.PublishSchedule.status == "draft").count()
+    targets_published = db.query(models.PublishTarget).filter(models.PublishTarget.status == "published").count()
+    return {"total": total, "scheduled": scheduled, "published": published, "drafts": drafts, "targets_published": targets_published}
+
+
+@app.put("/admin/api/publish/schedules/{sched_id}")
+async def publish_update(request: Request, sched_id: int, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    s = db.query(models.PublishSchedule).filter(models.PublishSchedule.id == sched_id).first()
+    if not s:
+        return {"error": "not found"}
+    body = await request.json()
+    if "status" in body:
+        s.status = body["status"]
+    if "scheduled_at" in body:
+        try:
+            s.scheduled_at = datetime.fromisoformat(body["scheduled_at"]) if body["scheduled_at"] else None
+        except Exception:
+            pass
+    if "notes" in body:
+        s.notes = body["notes"]
+    s.updated_at = datetime.utcnow()
+    db.commit()
+    targets = db.query(models.PublishTarget).filter(models.PublishTarget.schedule_id == sched_id).all()
+    return _schedule_to_dict(s, targets)
+
+
+@app.post("/admin/api/publish/targets/{target_id}/mark-published")
+def publish_mark_target(request: Request, target_id: int, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    t = db.query(models.PublishTarget).filter(models.PublishTarget.id == target_id).first()
+    if not t:
+        return {"error": "not found"}
+    t.status = "published"
+    t.published_at = datetime.utcnow()
+    # Check if all targets published
+    all_targets = db.query(models.PublishTarget).filter(models.PublishTarget.schedule_id == t.schedule_id).all()
+    if all(x.status == "published" for x in all_targets):
+        s = db.query(models.PublishSchedule).filter(models.PublishSchedule.id == t.schedule_id).first()
+        if s:
+            s.status = "published"
+            s.updated_at = datetime.utcnow()
+    db.commit()
+    return {"ok": True, "target_id": target_id}
+
+
+@app.post("/admin/api/publish/targets/{target_id}/mark-failed")
+async def publish_mark_failed(request: Request, target_id: int, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    body = await request.json()
+    t = db.query(models.PublishTarget).filter(models.PublishTarget.id == target_id).first()
+    if t:
+        t.status = "failed"
+        t.error_msg = body.get("error_msg", "")
+        db.commit()
+    return {"ok": True}
+
+
+@app.delete("/admin/api/publish/schedules/{sched_id}")
+def publish_delete(request: Request, sched_id: int, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    db.query(models.PublishTarget).filter(models.PublishTarget.schedule_id == sched_id).delete()
+    db.query(models.PublishSchedule).filter(models.PublishSchedule.id == sched_id).delete()
+    db.commit()
+    return {"ok": True}
+
+
+# ============================================================
 # CONTENT GENERATION — API routes
 # ============================================================
 from app.content_gen import chunk_text, extract_keywords, generate_content as _generate_content

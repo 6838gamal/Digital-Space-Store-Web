@@ -441,6 +441,10 @@ table.adm-table tr:hover td { background: rgba(255,255,255,.025); }
         <span class="adm-nav-icon">✍️</span>
         <span>توليد المحتوى</span>
       </a>
+      <a href="#" class="adm-nav-item" data-section="publish-auto">
+        <span class="adm-nav-icon">🚀</span>
+        <span>النشر التلقائي</span>
+      </a>
     </nav>
 
     <div class="adm-sidebar-bottom">
@@ -2741,6 +2745,659 @@ function handleChannelPublish(e, ch) {
     }
   });
   window.CG = CG;
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════
+     PUBLISH AUTO SECTION
+═══════════════════════════════════════════════════ -->
+<style>
+/* Publishing layout */
+.pub-wrap { display:flex; gap:0; height:100%; min-height:calc(100vh - 80px); }
+.pub-left {
+  width:400px; flex-shrink:0; background:#06091a;
+  border-left:1px solid rgba(148,163,184,.1);
+  display:flex; flex-direction:column; overflow-y:auto;
+}
+.pub-right { flex:1; display:flex; flex-direction:column; background:#0d1120; overflow-y:auto; }
+/* Stat bar */
+.pub-stats {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:0;
+  border-bottom:1px solid rgba(148,163,184,.1); flex-shrink:0;
+}
+.pub-stat-box { padding:14px 16px; text-align:center; border-left:1px solid rgba(148,163,184,.06); }
+.pub-stat-box:last-child { border-left:0; }
+.pub-stat-num { font-size:22px; font-weight:800; color:#f1f5f9; }
+.pub-stat-lbl { font-size:10.5px; color:#64748b; margin-top:2px; }
+/* Composer */
+.pub-composer { padding:20px; display:flex; flex-direction:column; gap:14px; flex:1; }
+.pub-section-title { font-size:12px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+/* Channel grid */
+.pub-chan-grid { display:flex; flex-wrap:wrap; gap:7px; }
+.pub-chan-pill {
+  display:flex; align-items:center; gap:6px; padding:7px 12px;
+  border-radius:30px; border:2px solid rgba(148,163,184,.15);
+  background:transparent; color:#64748b; cursor:pointer; font-size:12px;
+  font-weight:600; font-family:inherit; transition:all .18s;
+}
+.pub-chan-pill.selected { color:#fff; border-color:transparent; }
+/* Channel customize accordion */
+.pub-chan-custom { border-radius:10px; overflow:hidden; margin-bottom:6px; }
+.pub-chan-custom-header {
+  display:flex; align-items:center; gap:8px; padding:10px 14px;
+  cursor:pointer; background:#0a0f1e; border-radius:10px; font-size:12.5px; font-weight:600;
+  border:1px solid rgba(148,163,184,.1); user-select:none;
+}
+.pub-chan-custom-body { display:none; background:#060912; padding:14px; border:1px solid rgba(148,163,184,.08); border-top:0; border-radius:0 0 10px 10px; }
+.pub-chan-custom-body.open { display:block; }
+/* Date/time row */
+.pub-sched-row { display:flex; gap:8px; align-items:flex-end; }
+/* Status pills */
+.pub-status-badge { font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:20px; }
+.psb-scheduled  { background:rgba(251,191,36,.12);  color:#fbbf24; }
+.psb-draft      { background:rgba(148,163,184,.1);  color:#94a3b8; }
+.psb-published  { background:rgba(74,222,128,.1);   color:#4ade80; }
+.psb-cancelled  { background:rgba(239,68,68,.1);    color:#f87171; }
+/* Schedule card */
+.pub-card {
+  background:#06091a; border:1px solid rgba(148,163,184,.1); border-radius:14px;
+  padding:16px; margin-bottom:12px; transition:border-color .2s;
+}
+.pub-card:hover { border-color:rgba(99,102,241,.3); }
+.pub-card-header { display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
+.pub-card-content { font-size:13px; color:#94a3b8; line-height:1.65; white-space:pre-wrap; max-height:60px; overflow:hidden; }
+.pub-card-channels { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+.pub-chan-mini { display:flex; align-items:center; gap:4px; font-size:11px; padding:3px 8px; border-radius:14px; background:rgba(148,163,184,.06); color:#94a3b8; }
+/* Progress bar for channels */
+.pub-progress-bar { height:4px; background:rgba(148,163,184,.08); border-radius:4px; overflow:hidden; margin-top:10px; }
+.pub-progress-fill { height:100%; background:linear-gradient(90deg,#4ade80,#22d3ee); border-radius:4px; transition:width .4s; }
+/* Right panel tabs */
+.pub-right-tabs { display:flex; border-bottom:1px solid rgba(148,163,184,.1); flex-shrink:0; }
+.pub-rtab { flex:1; padding:13px; text-align:center; font-size:12.5px; font-weight:700; color:#64748b; cursor:pointer; background:transparent; border:none; font-family:inherit; border-bottom:2px solid transparent; transition:all .15s; }
+.pub-rtab.active { color:#a5b4fc; border-bottom-color:#6366f1; }
+.pub-rtab-content { display:none; padding:20px; flex:1; overflow-y:auto; }
+.pub-rtab-content.active { display:block; }
+</style>
+
+<section class="adm-section" id="section-publish-auto" style="padding:0;">
+  <div class="pub-wrap">
+
+    <!-- ══ LEFT: Composer ══ -->
+    <div class="pub-left">
+      <div style="padding:16px 20px;border-bottom:1px solid rgba(148,163,184,.1);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:14px;font-weight:800;color:#f1f5f9;">✍️ إنشاء منشور جديد</div>
+        <button onclick="PUB.resetComposer()" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:12px;font-family:inherit;">↺ مسح</button>
+      </div>
+      <div class="pub-composer">
+
+        <!-- Import from generated -->
+        <div>
+          <div class="pub-section-title">استيراد من المحتوى المُوَلَّد</div>
+          <select id="pub-import-select" class="adm-input" style="font-size:12.5px;" onchange="PUB.importContent(this)">
+            <option value="">— اختر محتوى مُوَلَّد —</option>
+          </select>
+        </div>
+
+        <!-- Content -->
+        <div>
+          <div class="pub-section-title">المحتوى الأساسي *</div>
+          <textarea id="pub-content" class="adm-input" style="min-height:100px;resize:vertical;font-size:13px;line-height:1.7;" placeholder="اكتب أو الصق المحتوى هنا..."></textarea>
+          <div id="pub-content-counter" style="font-size:11px;color:#475569;margin-top:4px;text-align:left;">0 حرف</div>
+        </div>
+
+        <!-- Channel selector -->
+        <div>
+          <div class="pub-section-title">اختر القنوات</div>
+          <div class="pub-chan-grid" id="pub-chan-grid"></div>
+        </div>
+
+        <!-- Per-channel customization -->
+        <div id="pub-chan-customizations" style="display:none;">
+          <div class="pub-section-title">تخصيص المحتوى لكل قناة</div>
+          <div id="pub-chan-custom-list"></div>
+        </div>
+
+        <!-- Schedule -->
+        <div>
+          <div class="pub-section-title">موعد النشر</div>
+          <div class="pub-sched-row">
+            <div style="flex:1;">
+              <input type="datetime-local" id="pub-sched-dt" class="adm-input" style="font-size:12.5px;">
+            </div>
+            <button onclick="PUB.setNow()" class="adm-btn adm-btn-sm" style="white-space:nowrap;flex-shrink:0;">⚡ الآن</button>
+          </div>
+          <div style="font-size:11px;color:#475569;margin-top:5px;">اتركه فارغاً للحفظ كـ مسودة</div>
+        </div>
+
+        <!-- Title & Notes -->
+        <div>
+          <div class="pub-section-title">عنوان المنشور (اختياري)</div>
+          <input id="pub-title" class="adm-input" placeholder="مثال: حملة رمضان - إنستغرام" style="font-size:13px;margin-bottom:10px;">
+          <div class="pub-section-title">ملاحظات</div>
+          <textarea id="pub-notes" class="adm-input" style="min-height:50px;resize:vertical;font-size:13px;" placeholder="ملاحظات للمراجعة الداخلية..."></textarea>
+        </div>
+
+        <!-- Action buttons -->
+        <div style="display:flex;gap:8px;">
+          <button onclick="PUB.save('draft')" class="adm-btn" style="flex:1;background:rgba(148,163,184,.1);color:#94a3b8;">💾 مسودة</button>
+          <button onclick="PUB.save('scheduled')" class="adm-btn" style="flex:2;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;font-weight:800;">🚀 جدولة النشر</button>
+        </div>
+        <div id="pub-save-status" style="font-size:12.5px;color:#60a5fa;display:none;padding:10px;background:rgba(96,165,250,.07);border-radius:8px;"></div>
+
+      </div>
+    </div>
+
+    <!-- ══ RIGHT: Schedule board ══ -->
+    <div class="pub-right">
+
+      <!-- Stats bar -->
+      <div class="pub-stats" id="pub-stats-bar">
+        <div class="pub-stat-box">
+          <div class="pub-stat-num" id="ps-total">0</div>
+          <div class="pub-stat-lbl">إجمالي المنشورات</div>
+        </div>
+        <div class="pub-stat-box">
+          <div class="pub-stat-num" id="ps-scheduled" style="color:#fbbf24;">0</div>
+          <div class="pub-stat-lbl">مجدولة</div>
+        </div>
+        <div class="pub-stat-box">
+          <div class="pub-stat-num" id="ps-published" style="color:#4ade80;">0</div>
+          <div class="pub-stat-lbl">منشورة</div>
+        </div>
+        <div class="pub-stat-box">
+          <div class="pub-stat-num" id="ps-drafts" style="color:#94a3b8;">0</div>
+          <div class="pub-stat-lbl">مسودات</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="pub-right-tabs">
+        <button class="pub-rtab active" onclick="PUB.switchRTab('upcoming')">📅 المجدولة والمسودات</button>
+        <button class="pub-rtab" onclick="PUB.switchRTab('published')">✅ المنشورة</button>
+        <button class="pub-rtab" onclick="PUB.switchRTab('all')">📋 الكل</button>
+      </div>
+
+      <div class="pub-rtab-content active" id="pub-tab-upcoming">
+        <div id="pub-list-upcoming"><div style="text-align:center;padding:60px 20px;color:#475569;">لا توجد منشورات مجدولة بعد.</div></div>
+      </div>
+      <div class="pub-rtab-content" id="pub-tab-published">
+        <div id="pub-list-published"><div style="text-align:center;padding:60px 20px;color:#475569;">لا توجد منشورات منشورة بعد.</div></div>
+      </div>
+      <div class="pub-rtab-content" id="pub-tab-all">
+        <div id="pub-list-all"></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════ MODAL: Schedule Detail ══════ -->
+<div class="modal-overlay" id="modal-pub-detail">
+  <div class="modal-box" style="max-width:680px;max-height:88vh;overflow-y:auto;">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="modal-title" id="mpd-title">تفاصيل المنشور</div>
+        <span id="mpd-status-badge" class="pub-status-badge"></span>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-pub-detail')">&times;</button>
+    </div>
+
+    <!-- Content preview -->
+    <div style="background:#0a0f1e;border-radius:12px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px;">المحتوى الأساسي</div>
+      <div id="mpd-content" style="font-size:13.5px;color:#e2e8f0;line-height:1.75;white-space:pre-wrap;"></div>
+    </div>
+
+    <!-- Meta row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div style="background:#0a0f1e;border-radius:10px;padding:12px;">
+        <div style="font-size:10.5px;color:#64748b;margin-bottom:4px;">📅 موعد النشر</div>
+        <div id="mpd-sched-at" style="font-size:13px;font-weight:600;color:#f1f5f9;">—</div>
+      </div>
+      <div style="background:#0a0f1e;border-radius:10px;padding:12px;">
+        <div style="font-size:10.5px;color:#64748b;margin-bottom:4px;">📝 ملاحظات</div>
+        <div id="mpd-notes" style="font-size:13px;color:#94a3b8;"></div>
+      </div>
+    </div>
+
+    <!-- Change schedule -->
+    <div style="background:#0a0f1e;border-radius:10px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:10px;">إعادة جدولة / تغيير الحالة</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input type="datetime-local" id="mpd-resched-dt" class="adm-input" style="flex:1;font-size:12px;min-width:160px;">
+        <button onclick="PUB.reschedule()" class="adm-btn adm-btn-sm">📅 إعادة جدولة</button>
+        <button onclick="PUB.cancel()" class="adm-btn adm-btn-sm" style="background:rgba(239,68,68,.15);color:#f87171;border-color:rgba(239,68,68,.2);">❌ إلغاء</button>
+      </div>
+    </div>
+
+    <!-- Targets -->
+    <div>
+      <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:10px;">📢 القنوات المستهدفة</div>
+      <div id="mpd-targets"></div>
+    </div>
+
+    <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+      <button onclick="PUB.deleteSchedule()" class="adm-btn" style="background:rgba(239,68,68,.1);color:#f87171;border-color:rgba(239,68,68,.2);">🗑️ حذف المنشور</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var PUB = {
+    channels: [],
+    selectedChannels: {},   // slug -> {channel_slug, channel_name, channel_icon, channel_color, customized_text, with_hashtags, hashtags}
+    allSchedules: [],
+    detailId: null,
+
+    CHANNELS: [
+      {slug:'whatsapp', name:'واتساب',    icon:'💬', color:'#25D366'},
+      {slug:'telegram', name:'تيليغرام',  icon:'✈️', color:'#2AABEE'},
+      {slug:'instagram',name:'إنستغرام',  icon:'📸', color:'#E1306C'},
+      {slug:'tiktok',   name:'تيك توك',   icon:'🎵', color:'#1a1a1a'},
+      {slug:'facebook', name:'فيسبوك',    icon:'👍', color:'#1877F2'},
+      {slug:'twitter',  name:'تويتر/X',   icon:'🐦', color:'#1DA1F2'},
+      {slug:'youtube',  name:'يوتيوب',    icon:'▶️', color:'#FF0000'},
+      {slug:'snapchat', name:'سناب شات',  icon:'👻', color:'#d4af00'},
+      {slug:'linkedin', name:'لينكدإن',   icon:'💼', color:'#0A66C2'},
+      {slug:'threads',  name:'ثريدز',     icon:'🧵', color:'#555'},
+    ],
+
+    // ── Init ──
+    init: function() {
+      PUB.renderChannelGrid();
+      PUB.loadGenerated();
+      PUB.loadAll();
+      PUB.loadStats();
+
+      // Content char counter
+      var ta = document.getElementById('pub-content');
+      if (ta) ta.addEventListener('input', function() {
+        var el = document.getElementById('pub-content-counter');
+        if (el) el.textContent = ta.value.length + ' حرف';
+      });
+    },
+
+    // ── Channel grid ──
+    renderChannelGrid: function() {
+      var grid = document.getElementById('pub-chan-grid');
+      grid.innerHTML = PUB.CHANNELS.map(function(ch) {
+        return '<button class="pub-chan-pill" data-slug="' + ch.slug + '" ' +
+          'style="--ch-color:' + ch.color + ';" ' +
+          'onclick="PUB.toggleChannel(\'' + ch.slug + '\')">' +
+          ch.icon + ' ' + ch.name +
+          '</button>';
+      }).join('');
+    },
+
+    toggleChannel: function(slug) {
+      var ch = PUB.CHANNELS.find(function(c) { return c.slug === slug; });
+      var pill = document.querySelector('[data-slug="' + slug + '"]');
+      if (!ch || !pill) return;
+
+      if (PUB.selectedChannels[slug]) {
+        delete PUB.selectedChannels[slug];
+        pill.classList.remove('selected');
+        pill.style.background = '';
+        pill.style.borderColor = '';
+        pill.style.color = '';
+      } else {
+        PUB.selectedChannels[slug] = {
+          channel_slug: slug,
+          channel_name: ch.name,
+          channel_icon: ch.icon,
+          channel_color: ch.color,
+          customized_text: '',
+          with_hashtags: false,
+          hashtags: '',
+        };
+        pill.classList.add('selected');
+        pill.style.background = ch.color;
+        pill.style.borderColor = ch.color;
+        pill.style.color = '#fff';
+      }
+      PUB.renderCustomizations();
+    },
+
+    // ── Per-channel customization ──
+    renderCustomizations: function() {
+      var slugs = Object.keys(PUB.selectedChannels);
+      var wrap = document.getElementById('pub-chan-customizations');
+      var list = document.getElementById('pub-chan-custom-list');
+      wrap.style.display = slugs.length ? 'block' : 'none';
+
+      list.innerHTML = slugs.map(function(slug) {
+        var d = PUB.selectedChannels[slug];
+        return '<div class="pub-chan-custom">' +
+          '<div class="pub-chan-custom-header" onclick="PUB.toggleCustom(\'' + slug + '\')">' +
+            '<span style="font-size:16px;">' + d.channel_icon + '</span>' +
+            '<span style="color:#e2e8f0;">' + d.channel_name + '</span>' +
+            '<span style="font-size:10px;color:#64748b;margin-right:auto;">تخصيص ▾</span>' +
+          '</div>' +
+          '<div class="pub-chan-custom-body" id="pcc-' + slug + '">' +
+            '<div style="margin-bottom:10px;">' +
+              '<label style="font-size:11px;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">نص مخصص (اتركه فارغاً لاستخدام المحتوى الأساسي)</label>' +
+              '<textarea class="adm-input" style="min-height:70px;font-size:12.5px;" ' +
+                'onchange="PUB.updateCustom(\'' + slug + '\',\'customized_text\',this.value)" ' +
+                'placeholder="نص خاص بـ ' + d.channel_name + '...">' + PUB.esc(d.customized_text) + '</textarea>' +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">' +
+              '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12.5px;color:#94a3b8;">' +
+                '<input type="checkbox" ' + (d.with_hashtags?'checked':'') + ' onchange="PUB.updateCustom(\'' + slug + '\',\'with_hashtags\',this.checked)"> هاشتاغات' +
+              '</label>' +
+            '</div>' +
+            '<input class="adm-input" style="font-size:12px;" placeholder="#هاشتاغ1 #هاشتاغ2 ..." ' +
+              'value="' + PUB.esc(d.hashtags) + '" ' +
+              'onchange="PUB.updateCustom(\'' + slug + '\',\'hashtags\',this.value)">' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    },
+
+    toggleCustom: function(slug) {
+      var body = document.getElementById('pcc-' + slug);
+      if (body) body.classList.toggle('open');
+    },
+
+    updateCustom: function(slug, field, val) {
+      if (PUB.selectedChannels[slug]) PUB.selectedChannels[slug][field] = val;
+    },
+
+    // ── Import generated content ──
+    loadGenerated: function() {
+      fetch('/admin/api/publish/generated')
+        .then(function(r) { return r.json(); })
+        .then(function(items) {
+          var sel = document.getElementById('pub-import-select');
+          if (!sel || !Array.isArray(items)) return;
+          var typeLabels = { article:'مقالة', post:'منشور', tweet:'تغريدة' };
+          items.forEach(function(i) {
+            var opt = document.createElement('option');
+            opt.value = i.id;
+            opt.dataset.content = i.content;
+            opt.textContent = '[' + (typeLabels[i.content_type]||i.content_type) + '] ' + i.topic + ' — ' + i.created_at;
+            sel.appendChild(opt);
+          });
+        });
+    },
+
+    importContent: function(sel) {
+      var opt = sel.options[sel.selectedIndex];
+      if (!opt || !opt.dataset.content) return;
+      var ta = document.getElementById('pub-content');
+      if (ta) {
+        ta.value = opt.dataset.content;
+        ta.dispatchEvent(new Event('input'));
+      }
+    },
+
+    // ── Set now ──
+    setNow: function() {
+      var dt = new Date();
+      dt.setSeconds(0, 0);
+      var local = dt.toISOString().slice(0,16);
+      document.getElementById('pub-sched-dt').value = local;
+    },
+
+    // ── Save schedule ──
+    save: function(statusHint) {
+      var content = (document.getElementById('pub-content').value || '').trim();
+      if (!content) { alert('المحتوى مطلوب.'); return; }
+      var schedDt = document.getElementById('pub-sched-dt').value;
+      var title = (document.getElementById('pub-title').value || '').trim();
+      var notes = (document.getElementById('pub-notes').value || '').trim();
+      var targets = Object.values(PUB.selectedChannels);
+
+      var status = statusHint;
+      if (statusHint === 'scheduled' && !schedDt) status = 'draft';
+
+      var statusEl = document.getElementById('pub-save-status');
+      statusEl.style.display = 'block';
+      statusEl.style.color = '#60a5fa';
+      statusEl.textContent = '⏳ جارٍ الحفظ...';
+
+      fetch('/admin/api/publish/schedules', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          title: title || content.slice(0,60),
+          base_content: content,
+          status: status,
+          scheduled_at: schedDt || null,
+          notes: notes,
+          targets: targets,
+        }),
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.error) {
+            statusEl.style.color = '#f87171';
+            statusEl.textContent = '❌ ' + d.error;
+            return;
+          }
+          statusEl.style.color = '#4ade80';
+          statusEl.textContent = '✅ تم الحفظ بنجاح — ' + (d.status === 'scheduled' ? '📅 مجدول' : '💾 مسودة');
+          PUB.resetComposer();
+          PUB.loadAll();
+          PUB.loadStats();
+        })
+        .catch(function(e) {
+          statusEl.style.color = '#f87171';
+          statusEl.textContent = '❌ خطأ: ' + e.message;
+        });
+    },
+
+    // ── Reset composer ──
+    resetComposer: function() {
+      document.getElementById('pub-content').value = '';
+      document.getElementById('pub-title').value = '';
+      document.getElementById('pub-notes').value = '';
+      document.getElementById('pub-sched-dt').value = '';
+      document.getElementById('pub-import-select').selectedIndex = 0;
+      document.getElementById('pub-content-counter').textContent = '0 حرف';
+      PUB.selectedChannels = {};
+      document.querySelectorAll('.pub-chan-pill').forEach(function(p) {
+        p.classList.remove('selected');
+        p.style.background = '';
+        p.style.borderColor = '';
+        p.style.color = '';
+      });
+      PUB.renderCustomizations();
+      var ss = document.getElementById('pub-save-status');
+      if (ss) ss.style.display = 'none';
+    },
+
+    // ── Load & render schedules ──
+    loadAll: function() {
+      fetch('/admin/api/publish/schedules')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          PUB.allSchedules = Array.isArray(data) ? data : [];
+          PUB.renderLists();
+        });
+    },
+
+    loadStats: function() {
+      fetch('/admin/api/publish/stats')
+        .then(function(r) { return r.json(); })
+        .then(function(s) {
+          var set = function(id, v) { var el=document.getElementById(id); if(el) el.textContent=v; };
+          set('ps-total', s.total||0);
+          set('ps-scheduled', s.scheduled||0);
+          set('ps-published', s.published||0);
+          set('ps-drafts', s.drafts||0);
+        });
+    },
+
+    renderLists: function() {
+      var upcoming = PUB.allSchedules.filter(function(s) { return s.status === 'scheduled' || s.status === 'draft'; });
+      var published = PUB.allSchedules.filter(function(s) { return s.status === 'published' || s.status === 'cancelled'; });
+
+      document.getElementById('pub-list-upcoming').innerHTML = upcoming.length ? upcoming.map(PUB.cardHTML).join('') :
+        '<div style="text-align:center;padding:60px 20px;color:#475569;">لا توجد منشورات مجدولة.</div>';
+      document.getElementById('pub-list-published').innerHTML = published.length ? published.map(PUB.cardHTML).join('') :
+        '<div style="text-align:center;padding:60px 20px;color:#475569;">لا توجد منشورات منشورة.</div>';
+      document.getElementById('pub-list-all').innerHTML = PUB.allSchedules.length ? PUB.allSchedules.map(PUB.cardHTML).join('') :
+        '<div style="text-align:center;padding:60px 20px;color:#475569;">لا توجد منشورات بعد.</div>';
+    },
+
+    cardHTML: function(s) {
+      var statusMap = {draft:'psb-draft',scheduled:'psb-scheduled',published:'psb-published',cancelled:'psb-cancelled'};
+      var statusLabel = {draft:'مسودة',scheduled:'مجدول',published:'منشور',cancelled:'ملغي'};
+      var publishedTargets = (s.targets||[]).filter(function(t) { return t.status === 'published'; }).length;
+      var totalTargets = (s.targets||[]).length;
+      var pct = totalTargets ? Math.round(publishedTargets/totalTargets*100) : 0;
+
+      return '<div class="pub-card" onclick="PUB.openDetail(' + s.id + ')">' +
+        '<div class="pub-card-header">' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:13.5px;font-weight:700;color:#f1f5f9;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+              PUB.esc(s.title || s.base_content.slice(0,60)) +
+            '</div>' +
+            '<div style="font-size:11px;color:#475569;">📅 ' + (s.scheduled_at_display || '—') + ' · ✏️ ' + s.created_at + '</div>' +
+          '</div>' +
+          '<span class="pub-status-badge ' + (statusMap[s.status]||'psb-draft') + '">' + (statusLabel[s.status]||s.status) + '</span>' +
+        '</div>' +
+        '<div class="pub-card-content">' + PUB.esc(s.base_content.slice(0,120)) + (s.base_content.length > 120 ? '…' : '') + '</div>' +
+        (totalTargets ? [
+          '<div class="pub-card-channels">' +
+          (s.targets||[]).slice(0,6).map(function(t) {
+            var tLabel = {pending:'⏳',published:'✅',failed:'❌',skipped:'⏭️'};
+            return '<span class="pub-chan-mini" style="border:1px solid ' + t.channel_color + '33;">' +
+              t.channel_icon + ' ' + t.channel_name + ' ' + (tLabel[t.status]||'') +
+            '</span>';
+          }).join('') +
+          (totalTargets > 6 ? '<span class="pub-chan-mini">+' + (totalTargets-6) + '</span>' : '') +
+          '</div>' +
+          '<div class="pub-progress-bar"><div class="pub-progress-fill" style="width:' + pct + '%"></div></div>' +
+          '<div style="font-size:10.5px;color:#475569;margin-top:5px;">' + publishedTargets + ' / ' + totalTargets + ' قناة منشورة</div>'
+        ].join('') : '') +
+      '</div>';
+    },
+
+    // ── Right panel tabs ──
+    switchRTab: function(tab) {
+      document.querySelectorAll('.pub-rtab').forEach(function(b, i) {
+        var tabs = ['upcoming','published','all'];
+        b.classList.toggle('active', tabs[i] === tab);
+      });
+      document.querySelectorAll('.pub-rtab-content').forEach(function(c) {
+        c.classList.toggle('active', c.id === 'pub-tab-' + tab);
+      });
+    },
+
+    // ── Detail modal ──
+    openDetail: function(id) {
+      var s = PUB.allSchedules.find(function(x) { return x.id === id; });
+      if (!s) return;
+      PUB.detailId = id;
+
+      document.getElementById('mpd-title').textContent = s.title || s.base_content.slice(0,50);
+      var badgeEl = document.getElementById('mpd-status-badge');
+      var statusMap = {draft:'psb-draft',scheduled:'psb-scheduled',published:'psb-published',cancelled:'psb-cancelled'};
+      var statusLabel = {draft:'مسودة',scheduled:'مجدول',published:'منشور',cancelled:'ملغي'};
+      badgeEl.className = 'pub-status-badge ' + (statusMap[s.status]||'psb-draft');
+      badgeEl.textContent = statusLabel[s.status] || s.status;
+
+      document.getElementById('mpd-content').textContent = s.base_content;
+      document.getElementById('mpd-sched-at').textContent = s.scheduled_at_display || '—';
+      document.getElementById('mpd-notes').textContent = s.notes || '—';
+      if (s.scheduled_at) document.getElementById('mpd-resched-dt').value = s.scheduled_at;
+
+      // Targets
+      var tEl = document.getElementById('mpd-targets');
+      if (!s.targets || !s.targets.length) {
+        tEl.innerHTML = '<div style="color:#475569;font-size:13px;">لم يتم اختيار قنوات.</div>';
+      } else {
+        tEl.innerHTML = s.targets.map(function(t) {
+          var statusColor = {pending:'#94a3b8',published:'#4ade80',failed:'#f87171',skipped:'#fbbf24'};
+          var statusLabel = {pending:'قيد الانتظار',published:'✅ منشور',failed:'❌ فشل',skipped:'⏭️ متجاوز'};
+          var effectiveText = t.customized_text || s.base_content;
+          return '<div style="background:#0a0f1e;border-radius:10px;padding:14px;margin-bottom:10px;">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
+              '<span style="font-size:20px;">' + t.channel_icon + '</span>' +
+              '<span style="font-weight:700;color:#f1f5f9;flex:1;">' + PUB.esc(t.channel_name) + '</span>' +
+              '<span style="font-size:11px;font-weight:700;color:' + (statusColor[t.status]||'#94a3b8') + ';">' + (statusLabel[t.status]||t.status) + '</span>' +
+            '</div>' +
+            (t.customized_text ? '<div style="font-size:12px;color:#64748b;margin-bottom:8px;">📝 نص مخصص</div>' : '') +
+            '<div style="font-size:12.5px;color:#94a3b8;line-height:1.65;margin-bottom:10px;max-height:60px;overflow:hidden;">' + PUB.esc(effectiveText.slice(0,150)) + (effectiveText.length>150?'…':'') + '</div>' +
+            (t.hashtags ? '<div style="font-size:12px;color:#60a5fa;margin-bottom:10px;">' + PUB.esc(t.hashtags) + '</div>' : '') +
+            (t.published_at ? '<div style="font-size:11px;color:#475569;margin-bottom:8px;">نُشر: ' + t.published_at + '</div>' : '') +
+            (t.status === 'pending' || t.status === 'failed' ? [
+              '<div style="display:flex;gap:6px;">',
+                '<button onclick="PUB.markTargetPublished(' + t.id + ')" style="background:rgba(74,222,128,.12);border:none;color:#4ade80;padding:6px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-family:inherit;">✅ تمييز كمنشور</button>',
+                '<button onclick="PUB.markTargetFailed(' + t.id + ')" style="background:rgba(239,68,68,.1);border:none;color:#f87171;padding:6px 10px;border-radius:7px;cursor:pointer;font-size:12px;font-family:inherit;">❌ فشل</button>',
+              '</div>',
+            ].join('') : '') +
+          '</div>';
+        }).join('');
+      }
+
+      openModal('modal-pub-detail');
+    },
+
+    markTargetPublished: function(tid) {
+      fetch('/admin/api/publish/targets/' + tid + '/mark-published', { method:'POST' })
+        .then(function() { PUB.loadAll(); PUB.loadStats(); closeModal('modal-pub-detail'); })
+        .catch(function(e) { alert('خطأ: ' + e.message); });
+    },
+
+    markTargetFailed: function(tid) {
+      fetch('/admin/api/publish/targets/' + tid + '/mark-failed', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ error_msg: 'فشل يدوي' }),
+      }).then(function() { PUB.loadAll(); closeModal('modal-pub-detail'); });
+    },
+
+    reschedule: function() {
+      var dt = document.getElementById('mpd-resched-dt').value;
+      if (!dt || !PUB.detailId) return;
+      fetch('/admin/api/publish/schedules/' + PUB.detailId, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ scheduled_at: dt, status: 'scheduled' }),
+      }).then(function() { PUB.loadAll(); PUB.loadStats(); closeModal('modal-pub-detail'); });
+    },
+
+    cancel: function() {
+      if (!PUB.detailId || !confirm('إلغاء هذا المنشور؟')) return;
+      fetch('/admin/api/publish/schedules/' + PUB.detailId, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ status: 'cancelled' }),
+      }).then(function() { PUB.loadAll(); PUB.loadStats(); closeModal('modal-pub-detail'); });
+    },
+
+    deleteSchedule: function() {
+      if (!PUB.detailId || !confirm('حذف هذا المنشور نهائياً؟')) return;
+      fetch('/admin/api/publish/schedules/' + PUB.detailId, { method:'DELETE' })
+        .then(function() { PUB.loadAll(); PUB.loadStats(); closeModal('modal-pub-detail'); });
+    },
+
+    esc: function(s) {
+      return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    },
+  };
+
+  // Init when section becomes visible
+  var pubInited = false;
+  document.addEventListener('DOMContentLoaded', function() {
+    var _orig = window.switchSection;
+    window.switchSection = function(name) {
+      if (typeof _orig === 'function') _orig(name);
+      if (name === 'publish-auto' && !pubInited) {
+        pubInited = true;
+        PUB.init();
+      }
+    };
+    var navBtn = document.querySelector('[data-section="publish-auto"]');
+    if (navBtn) {
+      navBtn.addEventListener('click', function() {
+        if (!pubInited) { pubInited = true; PUB.init(); }
+      });
+    }
+  });
+  window.PUB = PUB;
 })();
 </script>
 {% endblock %}

@@ -127,6 +127,37 @@ class GeneratedContent(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class PublishSchedule(Base):
+    __tablename__ = "publish_schedules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(500), default="")
+    base_content = Column(Text, nullable=False)
+    status = Column(String(30), default="draft")   # draft | scheduled | published | cancelled
+    scheduled_at = Column(DateTime, nullable=True)
+    notes = Column(Text, default="")
+    source_id = Column(Integer, nullable=True)     # GeneratedContent.id if imported
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class PublishTarget(Base):
+    __tablename__ = "publish_targets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    schedule_id = Column(Integer, ForeignKey("publish_schedules.id"), nullable=False, index=True)
+    channel_slug = Column(String(50), nullable=False)
+    channel_name = Column(String(100), default="")
+    channel_icon = Column(String(20), default="📢")
+    channel_color = Column(String(20), default="#64748b")
+    customized_text = Column(Text, default="")     # empty = use base_content
+    with_hashtags = Column(Boolean, default=False)
+    hashtags = Column(String(500), default="")
+    status = Column(String(20), default="pending")  # pending | published | failed | skipped
+    published_at = Column(DateTime, nullable=True)
+    error_msg = Column(Text, default="")
+
+
 MARKET_CHANNELS = [
     {"slug": "whatsapp",  "name": "واتساب",     "icon": "💬", "color": "#25D366"},
     {"slug": "telegram",  "name": "تيليغرام",   "icon": "✈️", "color": "#2AABEE"},
