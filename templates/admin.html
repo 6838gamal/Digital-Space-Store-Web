@@ -423,9 +423,10 @@ table.adm-table tr:hover td { background: rgba(255,255,255,.025); }
         <span class="adm-nav-icon">🚀</span>
         <span>النشر</span>
       </a>
-      <a href="#" class="adm-nav-item" data-section="admins">
-        <span class="adm-nav-icon">🛡️</span>
-        <span>المشرفون</span>
+      <a href="#" class="adm-nav-item" data-section="chatusers">
+        <span class="adm-nav-icon">💬</span>
+        <span>المتدردشون</span>
+        <span class="adm-nav-badge">{{ chat_participants | length }}</span>
       </a>
     </nav>
 
@@ -494,9 +495,9 @@ table.adm-table tr:hover td { background: rgba(255,255,255,.025); }
             <div class="stat-label">قاعدة المعرفة</div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon">🛡️</div>
-            <div class="stat-value">{{ admins | length }}</div>
-            <div class="stat-label">المشرفون</div>
+            <div class="stat-icon">💬</div>
+            <div class="stat-value">{{ chat_participants | length }}</div>
+            <div class="stat-label">المتدردشون</div>
           </div>
         </div>
 
@@ -1003,53 +1004,113 @@ table.adm-table tr:hover td { background: rgba(255,255,255,.025); }
       </section>
 
       <!-- ══════════════════════════════
-           ADMINS
+           CHAT USERS  (participants who chatted with the agent)
       ══════════════════════════════ -->
-      <section class="adm-section" id="section-admins">
+      <section class="adm-section" id="section-chatusers">
         <div class="adm-page-header">
           <div>
-            <div class="adm-page-title">🛡️ المشرفون</div>
-            <div class="adm-page-sub">{{ admins | length }} مشرف في النظام</div>
+            <div class="adm-page-title">💬 المتدردشون مع الوكيل</div>
+            <div class="adm-page-sub">{{ chat_participants | length }} مستخدم تفاعل مع الوكيل الذكي</div>
           </div>
+          <a class="btn btn-secondary" href="#" onclick="exportChatUsersCSV(event)">⬇️ تصدير CSV</a>
         </div>
 
         <div class="adm-card" style="padding:0;overflow:hidden;">
           <div class="adm-table-wrap">
-            <table class="adm-table">
+            <table class="adm-table" id="chatUsersTable">
               <thead>
                 <tr>
-                  <th>الاسم</th>
+                  <th>#</th>
+                  <th>الحساب</th>
                   <th>البريد الإلكتروني</th>
-                  <th>طريقة الدخول</th>
-                  <th>الدور</th>
-                  <th>تاريخ الإضافة</th>
+                  <th>الهاتف</th>
+                  <th>المحادثات</th>
+                  <th>المصدر</th>
+                  <th>أول ظهور</th>
+                  <th>آخر ظهور</th>
                 </tr>
               </thead>
               <tbody>
-                {% for user in admins %}
-                <tr>
+                {% for p in chat_participants %}
+                <tr data-name="{{ p.display_name or '' }}"
+                    data-email="{{ p.email or '' }}"
+                    data-phone="{{ p.phone or '' }}"
+                    data-conv="{{ conversations | selectattr('participant_id', 'equalto', p.id) | list | length }}">
+                  <td><span class="adm-badge adm-badge-gray">#{{ p.id }}</span></td>
                   <td>
                     <div style="display:flex;align-items:center;gap:10px;">
-                      {% if user.picture_url %}
-                      <img src="{{ user.picture_url }}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">
+                      {% if p.photo_url %}
+                        <img src="{{ p.photo_url }}" alt="" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid #334155;" onerror="this.outerHTML='<div style=\'width:34px;height:34px;border-radius:50%;background:#334155;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;\'>👤</div>'">
                       {% else %}
-                      <div style="width:34px;height:34px;border-radius:50%;background:#1e293b;display:flex;align-items:center;justify-content:center;font-size:16px;">👤</div>
+                        <div style="width:34px;height:34px;border-radius:50%;background:#334155;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">👤</div>
                       {% endif %}
-                      <span style="font-weight:600;color:#f1f5f9;">{{ user.name }}</span>
+                      <div style="min-width:0;">
+                        <div style="font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">{{ p.display_name or 'زائر مجهول' }}</div>
+                      </div>
                     </div>
                   </td>
-                  <td style="color:#94a3b8;">{{ user.email }}</td>
-                  <td><span class="adm-badge adm-badge-blue">{{ user.provider or 'email' }}</span></td>
-                  <td><span class="adm-badge adm-badge-green">{{ user.role or 'admin' }}</span></td>
-                  <td style="font-size:12px;color:#64748b;">{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '—' }}</td>
+                  <td>
+                    {% if p.email %}
+                      <a href="mailto:{{ p.email }}" style="color:#60a5fa;text-decoration:none;">{{ p.email }}</a>
+                    {% else %}
+                      <span style="color:#475569;">—</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if p.phone %}
+                      <a href="tel:{{ p.phone }}" style="color:#60a5fa;text-decoration:none;font-family:monospace;">{{ p.phone }}</a>
+                    {% else %}
+                      <span style="color:#475569;">—</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="adm-badge adm-badge-blue">{{ conversations | selectattr('participant_id', 'equalto', p.id) | list | length }}</span>
+                  </td>
+                  <td>
+                    {% if p.firebase_uid or p.provider == 'google' %}
+                      <span class="adm-badge adm-badge-green">Google</span>
+                    {% elif p.email %}
+                      <span class="adm-badge adm-badge-blue">مسجّل</span>
+                    {% else %}
+                      <span class="adm-badge adm-badge-gray">مجهول</span>
+                    {% endif %}
+                  </td>
+                  <td style="font-size:12px;color:#64748b;white-space:nowrap;">{{ p.created_at.strftime('%Y-%m-%d %H:%M') if p.created_at else '—' }}</td>
+                  <td style="font-size:12px;color:#64748b;white-space:nowrap;">{{ p.last_seen_at.strftime('%Y-%m-%d %H:%M') if p.last_seen_at else '—' }}</td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" class="adm-empty">لا يوجد مشرفون.</td></tr>
+                <tr><td colspan="8" class="adm-empty">لا يوجد متدردشون بعد. عندما يتحدث الزوار مع الوكيل سيظهرون هنا.</td></tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
         </div>
+
+        <script>
+          function exportChatUsersCSV(ev) {
+            ev.preventDefault();
+            var rows = document.querySelectorAll('#chatUsersTable tbody tr[data-email]');
+            var lines = ['name,email,phone,conversations'];
+            rows.forEach(function(r) {
+              var fields = ['name','email','phone','conv'];
+              var line = fields.map(function(f) {
+                var v = (r.getAttribute('data-' + f) || '').replace(/"/g, '""');
+                return '"' + v + '"';
+              }).join(',');
+              lines.push(line);
+            });
+            var csv = lines.join('\n');
+            var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'chat-users-' + new Date().toISOString().slice(0,10) + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+        </script>
       </section>
 
     </div>

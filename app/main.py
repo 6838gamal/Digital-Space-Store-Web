@@ -580,7 +580,13 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         reverse=True,
     )
     conversations = db.query(models.ChatConversation).order_by(models.ChatConversation.updated_at.desc()).limit(20).all()
-    admins = db.query(models.AdminUser).order_by(models.AdminUser.created_at.desc()).all()
+    # Chat participants: participants who have at least one conversation, ordered by last activity
+    chat_participant_ids = {c.participant_id for c in conversations}
+    all_conv = db.query(models.ChatConversation).all()
+    all_chat_participant_ids = {c.participant_id for c in all_conv}
+    chat_participants = db.query(models.StoreParticipant).filter(
+        models.StoreParticipant.id.in_(all_chat_participant_ids)
+    ).order_by(models.StoreParticipant.last_seen_at.desc()).all()
     response = templates.TemplateResponse(
         request=request,
         name="admin.html",
@@ -591,7 +597,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
             "participants": participants,
             "subscribers": subscribers,
             "conversations": conversations,
-            "admins": admins,
+            "chat_participants": chat_participants,
         },
     )
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
