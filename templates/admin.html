@@ -437,6 +437,10 @@ table.adm-table tr:hover td { background: rgba(255,255,255,.025); }
         <span class="adm-nav-icon">📊</span>
         <span>تحليل السوق</span>
       </a>
+      <a href="#" class="adm-nav-item" data-section="content-gen">
+        <span class="adm-nav-icon">✍️</span>
+        <span>توليد المحتوى</span>
+      </a>
     </nav>
 
     <div class="adm-sidebar-bottom">
@@ -2255,6 +2259,488 @@ function handleChannelPublish(e, ch) {
     }
   });
   window.MKT = MKT;
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════
+     CONTENT GENERATION SECTION
+═══════════════════════════════════════════════════ -->
+<style>
+/* Content-gen layout */
+.cg-wrap { display:flex; height:100%; min-height:calc(100vh - 80px); }
+/* Left panel: config/train */
+.cg-left {
+  width:360px; flex-shrink:0; background:#06091a;
+  border-left:1px solid rgba(148,163,184,.1);
+  display:flex; flex-direction:column; overflow-y:auto;
+}
+.cg-right {
+  flex:1; display:flex; flex-direction:column; background:#0d1120;
+  overflow:hidden;
+}
+/* Tabs */
+.cg-tabs { display:flex; border-bottom:1px solid rgba(148,163,184,.1); }
+.cg-tab {
+  flex:1; padding:13px 10px; text-align:center; font-size:12.5px;
+  font-weight:700; color:#64748b; cursor:pointer; background:transparent;
+  border:none; font-family:inherit; transition:all .15s;
+  border-bottom:2px solid transparent;
+}
+.cg-tab.active { color:#a5b4fc; border-bottom-color:#6366f1; }
+.cg-tab-content { display:none; padding:20px; flex:1; overflow-y:auto; }
+.cg-tab-content.active { display:block; }
+/* Form elements */
+.cg-label { font-size:11.5px; font-weight:700; color:#64748b; margin-bottom:6px; display:block; text-transform:uppercase; letter-spacing:.05em; }
+.cg-input { width:100%; background:#0a0f1e; border:1px solid rgba(148,163,184,.15); border-radius:10px; padding:10px 14px; color:#e2e8f0; font-size:13px; font-family:inherit; outline:none; transition:border-color .15s; }
+.cg-input:focus { border-color:rgba(99,102,241,.5); }
+.cg-textarea { width:100%; background:#0a0f1e; border:1px solid rgba(148,163,184,.15); border-radius:10px; padding:10px 14px; color:#e2e8f0; font-size:13px; font-family:inherit; outline:none; resize:vertical; min-height:80px; transition:border-color .15s; }
+.cg-textarea:focus { border-color:rgba(99,102,241,.5); }
+/* Option buttons */
+.cg-opts { display:flex; gap:6px; flex-wrap:wrap; }
+.cg-opt-btn {
+  padding:7px 14px; border-radius:8px; border:1px solid rgba(148,163,184,.15);
+  background:transparent; color:#64748b; cursor:pointer; font-size:12px;
+  font-weight:600; font-family:inherit; transition:all .15s;
+}
+.cg-opt-btn.active { background:rgba(99,102,241,.2); color:#a5b4fc; border-color:rgba(99,102,241,.4); }
+/* Drop zone */
+.cg-drop { border:2px dashed rgba(148,163,184,.2); border-radius:12px; padding:22px 16px; text-align:center; cursor:pointer; transition:all .2s; }
+.cg-drop:hover, .cg-drop.over { border-color:rgba(99,102,241,.5); }
+/* Generate button */
+.cg-gen-btn {
+  width:100%; padding:13px; background:linear-gradient(135deg,#4f46e5,#7c3aed);
+  border:none; border-radius:12px; color:#fff; font-size:14px; font-weight:800;
+  cursor:pointer; font-family:inherit; transition:opacity .2s; margin-top:6px;
+}
+.cg-gen-btn:hover { opacity:.9; }
+.cg-gen-btn:disabled { opacity:.4; cursor:not-allowed; }
+/* Output area */
+.cg-output-wrap {
+  flex:1; display:flex; flex-direction:column; padding:24px; gap:16px; overflow-y:auto;
+}
+.cg-output-card {
+  background:#06091a; border:1px solid rgba(148,163,184,.1); border-radius:14px;
+  overflow:hidden; flex:1; display:flex; flex-direction:column;
+}
+.cg-output-header {
+  display:flex; align-items:center; gap:10px; padding:12px 16px;
+  border-bottom:1px solid rgba(148,163,184,.08);
+}
+.cg-output-body {
+  flex:1; padding:20px; font-size:14px; line-height:1.85; color:#e2e8f0;
+  white-space:pre-wrap; overflow-y:auto; min-height:180px; direction:rtl;
+}
+.cg-output-body.en { direction:ltr; }
+.cg-output-body.empty { color:#475569; font-style:italic; display:flex; align-items:center; justify-content:center; min-height:240px; font-size:15px; }
+/* History */
+.cg-hist-item { background:#06091a; border:1px solid rgba(148,163,184,.08); border-radius:12px; padding:14px 16px; margin-bottom:10px; }
+.cg-hist-meta { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.cg-hist-body { font-size:13px; color:#94a3b8; line-height:1.6; white-space:pre-wrap; max-height:80px; overflow:hidden; }
+/* Training docs */
+.cg-doc-card { background:#06091a; border:1px solid rgba(148,163,184,.08); border-radius:12px; padding:14px; margin-bottom:10px; display:flex; align-items:center; gap:12px; }
+/* Toggle switch */
+.cg-toggle-wrap { display:flex; align-items:center; gap:10px; }
+.cg-toggle { position:relative; width:42px; height:22px; flex-shrink:0; }
+.cg-toggle input { opacity:0; width:0; height:0; }
+.cg-slider { position:absolute; inset:0; background:#1e293b; border-radius:22px; cursor:pointer; transition:.3s; }
+.cg-slider:before { content:''; position:absolute; width:16px; height:16px; left:3px; bottom:3px; background:#64748b; border-radius:50%; transition:.3s; }
+.cg-toggle input:checked + .cg-slider { background:rgba(99,102,241,.4); }
+.cg-toggle input:checked + .cg-slider:before { transform:translateX(20px); background:#a5b4fc; }
+</style>
+
+<section class="adm-section" id="section-content-gen" style="padding:0;">
+  <div class="cg-wrap">
+
+    <!-- ══ LEFT: Config Panel ══ -->
+    <div class="cg-left">
+      <!-- Tabs: Train / Data / Generate -->
+      <div class="cg-tabs">
+        <button class="cg-tab active" onclick="CG.switchTab('train')">📤 تدريب</button>
+        <button class="cg-tab" onclick="CG.switchTab('data')">📚 البيانات</button>
+        <button class="cg-tab" onclick="CG.switchTab('generate')">✍️ توليد</button>
+      </div>
+
+      <!-- TAB: Training -->
+      <div class="cg-tab-content active" id="cg-tab-train">
+        <div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:4px;">تدريب قاعدة المعرفة</div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:16px;">أضف ملفات أو روابط ليتعلم منها النظام أسلوبك</div>
+
+        <!-- Upload file -->
+        <div class="cg-drop" id="cg-drop-zone" onclick="document.getElementById('cg-file-input').click()">
+          <input type="file" id="cg-file-input" style="display:none" accept=".csv,.xlsx,.xls,.json,.txt,.pdf" onchange="CG.handleFile(this)">
+          <div style="font-size:26px;margin-bottom:8px;">📂</div>
+          <div style="font-size:13px;font-weight:600;color:#94a3b8;">اسحب ملفاً أو اضغط للاختيار</div>
+          <div style="font-size:11px;color:#475569;margin-top:4px;">CSV · XLSX · JSON · TXT · PDF</div>
+        </div>
+
+        <div style="text-align:center;margin:14px 0;color:#475569;font-size:12px;">— أو —</div>
+
+        <label class="cg-label">رابط URL</label>
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <input id="cg-url-input" class="cg-input" type="url" placeholder="https://example.com/article..." style="flex:1;">
+          <button onclick="CG.trainURL()" class="adm-btn" style="flex-shrink:0;">جلب</button>
+        </div>
+
+        <div id="cg-train-status" style="font-size:12.5px;color:#60a5fa;padding:10px;background:rgba(96,165,250,.07);border-radius:8px;display:none;"></div>
+      </div>
+
+      <!-- TAB: Training Data -->
+      <div class="cg-tab-content" id="cg-tab-data">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:700;color:#f1f5f9;">مصادر التدريب</div>
+          <span id="cg-total-chunks" style="font-size:11px;color:#64748b;"></span>
+        </div>
+        <div id="cg-docs-list"><div style="color:#475569;text-align:center;padding:30px 16px;font-size:13px;">لا توجد مصادر بعد. أضف ملفاً أو رابطاً.</div></div>
+      </div>
+
+      <!-- TAB: Generate Options -->
+      <div class="cg-tab-content" id="cg-tab-generate">
+        <div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:16px;">خيارات التوليد</div>
+
+        <!-- Content type -->
+        <label class="cg-label">نوع المحتوى</label>
+        <div class="cg-opts" style="margin-bottom:16px;" id="cg-type-opts">
+          <button class="cg-opt-btn active" data-val="article" onclick="CG.setOpt('type',this)">📰 مقالة</button>
+          <button class="cg-opt-btn" data-val="post" onclick="CG.setOpt('type',this)">📱 منشور</button>
+          <button class="cg-opt-btn" data-val="tweet" onclick="CG.setOpt('type',this)">🐦 تغريدة</button>
+        </div>
+
+        <!-- Topic -->
+        <label class="cg-label">الموضوع / الكلمات المفتاحية</label>
+        <textarea id="cg-topic" class="cg-textarea" placeholder="مثال: فوائد التسويق الرقمي، نصائح لزيادة المبيعات..." style="min-height:64px;margin-bottom:16px;"></textarea>
+
+        <!-- Language -->
+        <label class="cg-label">اللغة</label>
+        <div class="cg-opts" style="margin-bottom:16px;" id="cg-lang-opts">
+          <button class="cg-opt-btn active" data-val="ar" onclick="CG.setOpt('lang',this)">🇸🇦 عربي</button>
+          <button class="cg-opt-btn" data-val="en" onclick="CG.setOpt('lang',this)">🇬🇧 English</button>
+        </div>
+
+        <!-- Tone -->
+        <label class="cg-label">الأسلوب</label>
+        <div class="cg-opts" style="margin-bottom:16px;" id="cg-tone-opts">
+          <button class="cg-opt-btn active" data-val="professional" onclick="CG.setOpt('tone',this)">💼 احترافي</button>
+          <button class="cg-opt-btn" data-val="friendly" onclick="CG.setOpt('tone',this)">😊 ودود</button>
+          <button class="cg-opt-btn" data-val="inspiring" onclick="CG.setOpt('tone',this)">🔥 ملهم</button>
+        </div>
+
+        <!-- Length -->
+        <label class="cg-label">الطول</label>
+        <div class="cg-opts" style="margin-bottom:16px;" id="cg-len-opts">
+          <button class="cg-opt-btn" data-val="short" onclick="CG.setOpt('len',this)">قصير</button>
+          <button class="cg-opt-btn active" data-val="medium" onclick="CG.setOpt('len',this)">متوسط</button>
+          <button class="cg-opt-btn" data-val="long" onclick="CG.setOpt('len',this)">طويل</button>
+        </div>
+
+        <!-- Hashtags toggle -->
+        <div class="cg-toggle-wrap" style="margin-bottom:20px;">
+          <label class="cg-toggle">
+            <input type="checkbox" id="cg-hashtags">
+            <span class="cg-slider"></span>
+          </label>
+          <span style="font-size:13px;color:#94a3b8;">إضافة هاشتاغات (#)</span>
+        </div>
+
+        <button class="cg-gen-btn" id="cg-gen-btn" onclick="CG.generate()">✨ توليد المحتوى</button>
+
+        <div id="cg-gen-status" style="font-size:12px;color:#60a5fa;margin-top:10px;text-align:center;display:none;"></div>
+      </div>
+    </div>
+
+    <!-- ══ RIGHT: Output Area ══ -->
+    <div class="cg-right">
+      <!-- Output card -->
+      <div class="cg-output-wrap">
+        <div class="cg-output-card" id="cg-output-card">
+          <div class="cg-output-header">
+            <span id="cg-out-type-badge" class="adm-badge adm-badge-blue">—</span>
+            <span id="cg-out-topic-label" style="font-size:13px;color:#94a3b8;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+            <button id="cg-copy-btn" onclick="CG.copyOutput()" style="background:rgba(99,102,241,.15);border:none;color:#a5b4fc;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:inherit;" title="نسخ">📋 نسخ</button>
+            <button id="cg-regen-btn" onclick="CG.generate()" style="background:rgba(34,197,94,.1);border:none;color:#4ade80;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:inherit;margin-right:6px;" title="إعادة توليد">🔄 إعادة</button>
+          </div>
+          <div class="cg-output-body empty" id="cg-output-body">
+            اضغط "✍️ توليد" لبدء توليد المحتوى بناءً على بياناتك المدربة
+          </div>
+          <!-- Word/char count -->
+          <div id="cg-out-stats" style="padding:8px 16px;border-top:1px solid rgba(148,163,184,.06);font-size:11px;color:#475569;display:none;">
+            <span id="cg-word-count"></span> · <span id="cg-char-count"></span>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div style="font-size:13px;font-weight:700;color:#94a3b8;">🕑 سجل التوليد</div>
+            <button onclick="CG.loadHistory()" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:12px;font-family:inherit;">🔄 تحديث</button>
+          </div>
+          <div id="cg-history-list"><div style="color:#475569;font-size:12.5px;text-align:center;padding:20px;">لا يوجد سجل بعد.</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+(function() {
+  var CG = {
+    opts: { type:'article', lang:'ar', tone:'professional', len:'medium' },
+    currentContent: '',
+
+    // ── Tab switching ──
+    switchTab: function(tab) {
+      document.querySelectorAll('.cg-tab').forEach(function(b, i) {
+        var tabs = ['train','data','generate'];
+        b.classList.toggle('active', tabs[i] === tab);
+      });
+      document.querySelectorAll('.cg-tab-content').forEach(function(c) {
+        c.classList.toggle('active', c.id === 'cg-tab-' + tab);
+      });
+      if (tab === 'data') CG.loadDocs();
+      if (tab === 'generate') CG.loadHistory();
+    },
+
+    // ── Option buttons ──
+    setOpt: function(key, btn) {
+      var groupMap = { type:'cg-type-opts', lang:'cg-lang-opts', tone:'cg-tone-opts', len:'cg-len-opts' };
+      var propMap  = { type:'type', lang:'lang', tone:'tone', len:'len' };
+      document.querySelectorAll('#' + groupMap[key] + ' .cg-opt-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      CG.opts[propMap[key]] = btn.getAttribute('data-val');
+    },
+
+    // ── File upload ──
+    handleFile: function(input) { if (input.files[0]) CG.trainFile(input.files[0]); },
+
+    trainFile: function(file) {
+      CG.showTrainStatus('⏳ جارٍ رفع ' + file.name + '...');
+      var fd = new FormData();
+      fd.append('file', file);
+      CG.doTrain(fd);
+    },
+
+    trainURL: function() {
+      var url = (document.getElementById('cg-url-input') || {}).value || '';
+      if (!url.trim()) { alert('أدخل رابطاً صالحاً.'); return; }
+      CG.showTrainStatus('⏳ جارٍ جلب الرابط...');
+      var fd = new FormData();
+      fd.append('url', url.trim());
+      CG.doTrain(fd);
+    },
+
+    doTrain: function(fd) {
+      fetch('/admin/api/content-gen/train', { method:'POST', body:fd })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.error) { CG.showTrainStatus('❌ ' + d.error, true); return; }
+          CG.showTrainStatus('✅ تم التدريب: ' + d.chunk_count + ' مقطع · ' + d.word_count + ' كلمة', false, true);
+          document.getElementById('cg-url-input').value = '';
+        })
+        .catch(function(e) { CG.showTrainStatus('❌ خطأ: ' + e.message, true); });
+    },
+
+    showTrainStatus: function(msg, isErr, isOk) {
+      var el = document.getElementById('cg-train-status');
+      el.style.display = 'block';
+      el.style.color = isErr ? '#f87171' : (isOk ? '#4ade80' : '#60a5fa');
+      el.style.background = isErr ? 'rgba(239,68,68,.07)' : (isOk ? 'rgba(74,222,128,.07)' : 'rgba(96,165,250,.07)');
+      el.textContent = msg;
+    },
+
+    // ── Load training docs ──
+    loadDocs: function() {
+      fetch('/admin/api/content-gen/docs')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var el = document.getElementById('cg-docs-list');
+          var tc = document.getElementById('cg-total-chunks');
+          if (tc) tc.textContent = data.total_chunks + ' مقطع إجمالاً';
+          if (!data.docs || !data.docs.length) {
+            el.innerHTML = '<div style="color:#475569;text-align:center;padding:30px 16px;font-size:13px;">لا توجد مصادر بعد.</div>';
+            return;
+          }
+          el.innerHTML = data.docs.map(function(d) {
+            var icon = d.source_type === 'url' ? '🔗' : '📁';
+            var shortRef = d.title || d.source_ref.slice(-40);
+            return '<div class="cg-doc-card">' +
+              '<div style="font-size:22px;flex-shrink:0;">' + icon + '</div>' +
+              '<div style="flex:1;min-width:0;">' +
+                '<div style="font-size:12.5px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + CG.esc(d.source_ref) + '">' + CG.esc(shortRef) + '</div>' +
+                '<div style="font-size:11px;color:#475569;margin-top:3px;">' + d.chunk_count + ' مقطع · ' + d.word_count + ' كلمة · ' + d.created_at + '</div>' +
+              '</div>' +
+              '<button onclick="CG.deleteDoc(' + d.id + ')" style="background:rgba(239,68,68,.1);border:none;color:#f87171;padding:5px 8px;border-radius:7px;cursor:pointer;font-size:12px;" title="حذف">🗑️</button>' +
+            '</div>';
+          }).join('');
+        });
+    },
+
+    deleteDoc: function(id) {
+      if (!confirm('حذف مصدر التدريب هذا وجميع مقاطعه؟')) return;
+      fetch('/admin/api/content-gen/docs/' + id, { method:'DELETE' })
+        .then(function() { CG.loadDocs(); });
+    },
+
+    // ── Generate content ──
+    generate: function() {
+      var topic = (document.getElementById('cg-topic') || {}).value || '';
+      if (!topic.trim()) {
+        alert('أدخل موضوعاً أو كلمات مفتاحية أولاً.');
+        CG.switchTab('generate');
+        return;
+      }
+      var btn = document.getElementById('cg-gen-btn');
+      btn.disabled = true;
+      btn.textContent = '⏳ جارٍ التوليد...';
+      var statusEl = document.getElementById('cg-gen-status');
+      statusEl.style.display = 'block';
+      statusEl.textContent = 'يتم استرجاع السياق وتوليد المحتوى...';
+
+      var payload = {
+        topic: topic.trim(),
+        content_type: CG.opts.type,
+        language: CG.opts.lang,
+        tone: CG.opts.tone,
+        length_hint: CG.opts.len,
+        with_hashtags: document.getElementById('cg-hashtags').checked,
+      };
+
+      fetch('/admin/api/content-gen/generate', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload),
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          btn.disabled = false;
+          btn.textContent = '✨ توليد المحتوى';
+          statusEl.style.display = 'none';
+          if (d.error) { statusEl.style.display='block'; statusEl.style.color='#f87171'; statusEl.textContent='❌ '+d.error; return; }
+          CG.currentContent = d.content;
+          CG.displayOutput(d);
+          CG.loadHistory();
+        })
+        .catch(function(e) {
+          btn.disabled = false;
+          btn.textContent = '✨ توليد المحتوى';
+          statusEl.style.display = 'block';
+          statusEl.style.color = '#f87171';
+          statusEl.textContent = '❌ ' + e.message;
+        });
+    },
+
+    // ── Display output ──
+    displayOutput: function(d) {
+      var typeLabels = { article:'📰 مقالة', post:'📱 منشور', tweet:'🐦 تغريدة' };
+      var bodyEl = document.getElementById('cg-output-body');
+      bodyEl.className = 'cg-output-body' + (d.language === 'en' ? ' en' : '');
+      bodyEl.textContent = d.content;
+
+      document.getElementById('cg-out-type-badge').textContent = typeLabels[d.content_type] || d.content_type;
+      document.getElementById('cg-out-topic-label').textContent = d.topic;
+
+      // Stats
+      var words = d.content.trim().split(/\s+/).length;
+      var chars = d.content.length;
+      document.getElementById('cg-word-count').textContent = words + ' كلمة';
+      document.getElementById('cg-char-count').textContent = chars + ' حرف';
+      document.getElementById('cg-out-stats').style.display = 'block';
+
+      // Switch to generate tab to show output is ready
+      CG.switchTab('generate');
+    },
+
+    copyOutput: function() {
+      if (!CG.currentContent) return;
+      navigator.clipboard.writeText(CG.currentContent).then(function() {
+        var btn = document.getElementById('cg-copy-btn');
+        btn.textContent = '✅ تم النسخ';
+        setTimeout(function() { btn.textContent = '📋 نسخ'; }, 2000);
+      }).catch(function() {
+        var ta = document.createElement('textarea');
+        ta.value = CG.currentContent;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      });
+    },
+
+    // ── History ──
+    loadHistory: function() {
+      fetch('/admin/api/content-gen/history')
+        .then(function(r) { return r.json(); })
+        .then(function(items) {
+          var el = document.getElementById('cg-history-list');
+          if (!items || !items.length) {
+            el.innerHTML = '<div style="color:#475569;font-size:12.5px;text-align:center;padding:20px;">لا يوجد سجل بعد.</div>';
+            return;
+          }
+          var typeIcons = { article:'📰', post:'📱', tweet:'🐦' };
+          var langLabels = { ar:'🇸🇦', en:'🇬🇧' };
+          el.innerHTML = items.map(function(item) {
+            var preview = item.content.slice(0, 120).replace(/\n/g,' ') + (item.content.length > 120 ? '…' : '');
+            return '<div class="cg-hist-item">' +
+              '<div class="cg-hist-meta">' +
+                '<span class="adm-badge adm-badge-blue" style="font-size:10.5px;">' + (typeIcons[item.content_type]||'📄') + ' ' + (item.content_type === 'article' ? 'مقالة' : item.content_type === 'post' ? 'منشور' : 'تغريدة') + '</span>' +
+                (langLabels[item.language] ? '<span style="font-size:13px;">' + langLabels[item.language] + '</span>' : '') +
+                (item.with_hashtags ? '<span style="font-size:10.5px;color:#60a5fa;">#</span>' : '') +
+                '<span style="font-size:11px;color:#e2e8f0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + CG.esc(item.topic) + '">' + CG.esc(item.topic) + '</span>' +
+                '<span style="font-size:10px;color:#475569;flex-shrink:0;">' + item.created_at + '</span>' +
+              '</div>' +
+              '<div class="cg-hist-body">' + CG.esc(preview) + '</div>' +
+              '<div style="display:flex;gap:8px;margin-top:10px;">' +
+                '<button onclick="CG.loadHistItem(' + JSON.stringify(item).replace(/"/g,'&quot;') + ')" style="background:rgba(99,102,241,.1);border:none;color:#a5b4fc;padding:5px 10px;border-radius:7px;cursor:pointer;font-size:11.5px;font-family:inherit;">👁️ عرض</button>' +
+                '<button onclick="CG.deleteHistItem(' + item.id + ')" style="background:rgba(239,68,68,.07);border:none;color:#f87171;padding:5px 8px;border-radius:7px;cursor:pointer;font-size:11.5px;">🗑️</button>' +
+              '</div>' +
+            '</div>';
+          }).join('');
+        });
+    },
+
+    loadHistItem: function(item) {
+      CG.currentContent = item.content;
+      CG.displayOutput(item);
+    },
+
+    deleteHistItem: function(id) {
+      if (!confirm('حذف هذا المحتوى من السجل؟')) return;
+      fetch('/admin/api/content-gen/history/' + id, { method:'DELETE' })
+        .then(function() { CG.loadHistory(); });
+    },
+
+    // ── Drag & drop ──
+    initDrop: function() {
+      var zone = document.getElementById('cg-drop-zone');
+      if (!zone) return;
+      zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('over'); });
+      zone.addEventListener('dragleave', function() { zone.classList.remove('over'); });
+      zone.addEventListener('drop', function(e) {
+        e.preventDefault(); zone.classList.remove('over');
+        if (e.dataTransfer.files[0]) CG.trainFile(e.dataTransfer.files[0]);
+      });
+    },
+
+    esc: function(s) {
+      return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    },
+  };
+
+  // Init when section becomes visible
+  var cgInited = false;
+  document.addEventListener('DOMContentLoaded', function() {
+    var _orig = window.switchSection;
+    window.switchSection = function(name) {
+      if (typeof _orig === 'function') _orig(name);
+      if (name === 'content-gen' && !cgInited) { cgInited = true; CG.initDrop(); }
+    };
+    var cgBtn = document.querySelector('[data-section="content-gen"]');
+    if (cgBtn) {
+      cgBtn.addEventListener('click', function() {
+        if (!cgInited) { cgInited = true; CG.initDrop(); }
+      });
+    }
+  });
+  window.CG = CG;
 })();
 </script>
 {% endblock %}

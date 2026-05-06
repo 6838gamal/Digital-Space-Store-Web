@@ -38,6 +38,7 @@ A FastAPI-based e-commerce web application with a customer storefront, admin das
 - Admin dashboard to manage products, knowledge base, participants, and chat history
 - Customer insights: per-participant summary of interests extracted automatically from chat
 - Market analysis: per-channel dashboards (WhatsApp/Telegram/Instagram/TikTok/Facebook/X/YouTube/Snapchat) with file/URL upload, Chart.js charts, data tables, and archive
+- Content generation: RAG-based engine trains on uploaded files/URLs, generates articles/posts/tweets in Arabic & English with tone, length, hashtag options, and history log
 - Dark/light mode and bilingual (Arabic/English) support
 
 ## User preferences

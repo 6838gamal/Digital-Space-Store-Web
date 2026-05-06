@@ -91,6 +91,42 @@ class ParticipantInsight(Base):
     updated_at = Column(DateTime, default=datetime.utcnow)
 
 
+class ContentTrainingDoc(Base):
+    __tablename__ = "content_training_docs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    source_type = Column(String(20), nullable=False)   # 'file' | 'url'
+    source_ref = Column(String(1000), default="")
+    title = Column(String(500), default="")
+    chunk_count = Column(Integer, default=0)
+    word_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ContentChunk(Base):
+    __tablename__ = "content_chunks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    doc_id = Column(Integer, ForeignKey("content_training_docs.id"), nullable=False, index=True)
+    text = Column(Text, nullable=False)
+    keywords = Column(Text, default="")   # comma-separated top words
+    position = Column(Integer, default=0)
+
+
+class GeneratedContent(Base):
+    __tablename__ = "generated_contents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    content_type = Column(String(50), nullable=False)   # 'article' | 'post' | 'tweet'
+    topic = Column(String(500), default="")
+    language = Column(String(10), default="ar")         # 'ar' | 'en'
+    tone = Column(String(50), default="professional")   # 'professional' | 'friendly' | 'inspiring'
+    with_hashtags = Column(Boolean, default=False)
+    length_hint = Column(String(20), default="medium")  # 'short' | 'medium' | 'long'
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 MARKET_CHANNELS = [
     {"slug": "whatsapp",  "name": "واتساب",     "icon": "💬", "color": "#25D366"},
     {"slug": "telegram",  "name": "تيليغرام",   "icon": "✈️", "color": "#2AABEE"},

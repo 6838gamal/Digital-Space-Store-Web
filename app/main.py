@@ -849,6 +849,189 @@ async def transcribe_audio(
 
 
 # ============================================================
+# CONTENT GENERATION — API routes
+# ============================================================
+from app.content_gen import chunk_text, extract_keywords, generate_content as _generate_content
+from app.market_parser import parse_upload as _mkt_parse_upload, fetch_url as _mkt_fetch_url
+
+
+@app.post("/admin/api/content-gen/train")
+async def content_gen_train(
+    request: Request,
+    db: Session = Depends(get_db),
+    file: UploadFile | None = File(default=None),
+    url: str = Form(default=""),
+):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+
+    parsed = None
+    source_type = ""
+    source_ref = ""
+
+    if file and file.filename:
+        raw = await file.read()
+        parsed = _mkt_parse_upload(file.filename, raw)
+        source_type = "file"
+        source_ref = file.filename
+    elif url.strip():
+        parsed = _mkt_fetch_url(url.strip())
+        source_type = "url"
+        source_ref = url.strip()
+    else:
+        return {"error": "يرجى إرفاق ملف أو رابط."}
+
+    rows = parsed.get("rows", [])
+    cols = parsed.get("columns", [])
+    if rows and cols:
+        full_text = "\n".join(" | ".join(str(c) for c in row) for row in rows)
+    else:
+        full_text = parsed.get("summary", "")
+
+    if not full_text.strip():
+        return {"error": "لم يتم استخراج أي نص من الملف."}
+
+    words = full_text.split()
+    chunks = chunk_text(full_text)
+
+    doc = models.ContentTrainingDoc(
+        source_type=source_type,
+        source_ref=source_ref,
+        title=source_ref.split("/")[-1].split("?")[0][:200],
+        chunk_count=len(chunks),
+        word_count=len(words),
+    )
+    db.add(doc)
+    db.flush()
+
+    for i, chunk_text_val in enumerate(chunks):
+        kw = extract_keywords(chunk_text_val, 30)
+        db.add(models.ContentChunk(
+            doc_id=doc.id,
+            text=chunk_text_val,
+            keywords=",".join(kw),
+            position=i,
+        ))
+    db.commit()
+    db.refresh(doc)
+
+    return {
+        "id": doc.id,
+        "source_type": source_type,
+        "source_ref": source_ref,
+        "chunk_count": doc.chunk_count,
+        "word_count": doc.word_count,
+        "created_at": doc.created_at.strftime("%Y-%m-%d %H:%M"),
+    }
+
+
+@app.get("/admin/api/content-gen/docs")
+def content_gen_docs(request: Request, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    docs = db.query(models.ContentTrainingDoc).order_by(models.ContentTrainingDoc.created_at.desc()).all()
+    total_chunks = db.query(models.ContentChunk).count()
+    return {
+        "docs": [
+            {
+                "id": d.id,
+                "source_type": d.source_type,
+                "source_ref": d.source_ref,
+                "title": d.title,
+                "chunk_count": d.chunk_count,
+                "word_count": d.word_count,
+                "created_at": d.created_at.strftime("%Y-%m-%d %H:%M"),
+            } for d in docs
+        ],
+        "total_chunks": total_chunks,
+    }
+
+
+@app.delete("/admin/api/content-gen/docs/{doc_id}")
+def content_gen_delete_doc(request: Request, doc_id: int, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    db.query(models.ContentChunk).filter(models.ContentChunk.doc_id == doc_id).delete()
+    db.query(models.ContentTrainingDoc).filter(models.ContentTrainingDoc.id == doc_id).delete()
+    db.commit()
+    return {"ok": True}
+
+
+@app.post("/admin/api/content-gen/generate")
+async def content_gen_generate(request: Request, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    body = await request.json()
+    topic = (body.get("topic") or "").strip()
+    content_type = body.get("content_type", "post")
+    language = body.get("language", "ar")
+    tone = body.get("tone", "professional")
+    with_hashtags = bool(body.get("with_hashtags", False))
+    length_hint = body.get("length_hint", "medium")
+
+    if not topic:
+        return {"error": "يرجى إدخال موضوع أو كلمات مفتاحية."}
+
+    content = _generate_content(topic, content_type, language, tone, with_hashtags, length_hint, db)
+
+    record = models.GeneratedContent(
+        content_type=content_type,
+        topic=topic,
+        language=language,
+        tone=tone,
+        with_hashtags=with_hashtags,
+        length_hint=length_hint,
+        content=content,
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+
+    return {
+        "id": record.id,
+        "content": content,
+        "content_type": content_type,
+        "topic": topic,
+        "created_at": record.created_at.strftime("%Y-%m-%d %H:%M"),
+    }
+
+
+@app.get("/admin/api/content-gen/history")
+def content_gen_history(request: Request, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    items = db.query(models.GeneratedContent).order_by(models.GeneratedContent.created_at.desc()).limit(50).all()
+    return [
+        {
+            "id": i.id,
+            "content_type": i.content_type,
+            "topic": i.topic,
+            "language": i.language,
+            "tone": i.tone,
+            "with_hashtags": i.with_hashtags,
+            "length_hint": i.length_hint,
+            "content": i.content,
+            "created_at": i.created_at.strftime("%Y-%m-%d %H:%M"),
+        } for i in items
+    ]
+
+
+@app.delete("/admin/api/content-gen/history/{item_id}")
+def content_gen_delete_history(request: Request, item_id: int, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    db.query(models.GeneratedContent).filter(models.GeneratedContent.id == item_id).delete()
+    db.commit()
+    return {"ok": True}
+
+
+# ============================================================
 # MARKET ANALYSIS — API routes
 # ============================================================
 from app.market_parser import parse_upload, fetch_url as market_fetch_url
