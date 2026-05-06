@@ -111,6 +111,14 @@ def on_startup():
             db.commit()
 
         ensure_default_knowledge(db)
+
+        # Seed market channels
+        for ch in models.MARKET_CHANNELS:
+            exists = db.query(models.MarketChannel).filter(models.MarketChannel.slug == ch["slug"]).first()
+            if not exists:
+                db.add(models.MarketChannel(**ch))
+        db.commit()
+
         db.close()
         print("✅ Database ready")
 
@@ -838,6 +846,142 @@ async def transcribe_audio(
     except Exception as e:
         print(f"Transcribe error: {e}")
         return {"text": "", "error": str(e)}
+
+
+# ============================================================
+# MARKET ANALYSIS — API routes
+# ============================================================
+from app.market_parser import parse_upload, fetch_url as market_fetch_url
+
+
+@app.get("/admin/api/market/channels")
+def market_channels(request: Request, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    channels = db.query(models.MarketChannel).all()
+    result = []
+    for ch in channels:
+        latest = (
+            db.query(models.MarketDataSnapshot)
+            .filter(models.MarketDataSnapshot.channel_id == ch.id)
+            .order_by(models.MarketDataSnapshot.created_at.desc())
+            .first()
+        )
+        snap_count = db.query(models.MarketDataSnapshot).filter(
+            models.MarketDataSnapshot.channel_id == ch.id
+        ).count()
+        result.append({
+            "id": ch.id,
+            "slug": ch.slug,
+            "name": ch.name,
+            "icon": ch.icon,
+            "color": ch.color,
+            "snap_count": snap_count,
+            "latest_summary": latest.summary if latest else "",
+            "latest_at": latest.created_at.strftime("%Y-%m-%d %H:%M") if latest else "",
+        })
+    return result
+
+
+@app.get("/admin/api/market/{slug}")
+def market_channel_detail(request: Request, slug: str, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    ch = db.query(models.MarketChannel).filter(models.MarketChannel.slug == slug).first()
+    if not ch:
+        return {"error": "channel not found"}
+    snapshots = (
+        db.query(models.MarketDataSnapshot)
+        .filter(models.MarketDataSnapshot.channel_id == ch.id)
+        .order_by(models.MarketDataSnapshot.created_at.desc())
+        .all()
+    )
+    snaps_data = []
+    for s in snapshots:
+        snaps_data.append({
+            "id": s.id,
+            "source_type": s.source_type,
+            "source_ref": s.source_ref,
+            "row_count": s.row_count,
+            "summary": s.summary,
+            "created_at": s.created_at.strftime("%Y-%m-%d %H:%M"),
+            "columns": json.loads(s.columns_json or "[]"),
+            "rows": json.loads(s.rows_json or "[]"),
+        })
+    return {
+        "channel": {"id": ch.id, "slug": ch.slug, "name": ch.name, "icon": ch.icon, "color": ch.color},
+        "snapshots": snaps_data,
+    }
+
+
+@app.post("/admin/api/market/{slug}/upload")
+async def market_upload(
+    request: Request,
+    slug: str,
+    db: Session = Depends(get_db),
+    file: UploadFile | None = File(default=None),
+    url: str = Form(default=""),
+):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    ch = db.query(models.MarketChannel).filter(models.MarketChannel.slug == slug).first()
+    if not ch:
+        return {"error": "channel not found"}
+
+    parsed = None
+    source_type = ""
+    source_ref = ""
+
+    if file and file.filename:
+        raw = await file.read()
+        parsed = parse_upload(file.filename, raw)
+        source_type = "file"
+        source_ref = file.filename
+    elif url.strip():
+        parsed = market_fetch_url(url.strip())
+        source_type = "url"
+        source_ref = url.strip()
+    else:
+        return {"error": "يرجى إرفاق ملف أو رابط."}
+
+    snap = models.MarketDataSnapshot(
+        channel_id=ch.id,
+        source_type=source_type,
+        source_ref=source_ref,
+        columns_json=json.dumps(parsed.get("columns", []), ensure_ascii=False),
+        rows_json=json.dumps(parsed.get("rows", [])[:500], ensure_ascii=False),
+        summary=parsed.get("summary", ""),
+        row_count=parsed.get("row_count", 0),
+    )
+    db.add(snap)
+    db.commit()
+    db.refresh(snap)
+
+    return {
+        "id": snap.id,
+        "source_type": source_type,
+        "source_ref": source_ref,
+        "row_count": snap.row_count,
+        "summary": snap.summary,
+        "created_at": snap.created_at.strftime("%Y-%m-%d %H:%M"),
+        "columns": json.loads(snap.columns_json),
+        "rows": json.loads(snap.rows_json),
+    }
+
+
+@app.delete("/admin/api/market/snapshot/{snap_id}")
+def market_delete_snapshot(request: Request, snap_id: int, db: Session = Depends(get_db)):
+    admin = require_admin(request, db)
+    if not admin:
+        return {"error": "unauthorized"}
+    snap = db.query(models.MarketDataSnapshot).filter(models.MarketDataSnapshot.id == snap_id).first()
+    if snap:
+        db.delete(snap)
+        db.commit()
+    return {"ok": True}
 
 
 # ---------------------------

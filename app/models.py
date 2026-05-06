@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Float, Text, Boolean, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, Text, Boolean, ForeignKey, DateTime, JSON
 from app.database import Base
 
 class Product(Base):
@@ -89,3 +89,40 @@ class ParticipantInsight(Base):
     intents_seen = Column(Text, default="")
     message_count = Column(Integer, default=0)
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+MARKET_CHANNELS = [
+    {"slug": "whatsapp",  "name": "واتساب",     "icon": "💬", "color": "#25D366"},
+    {"slug": "telegram",  "name": "تيليغرام",   "icon": "✈️", "color": "#2AABEE"},
+    {"slug": "instagram", "name": "إنستغرام",   "icon": "📸", "color": "#E1306C"},
+    {"slug": "tiktok",    "name": "تيك توك",    "icon": "🎵", "color": "#010101"},
+    {"slug": "facebook",  "name": "فيسبوك",     "icon": "👍", "color": "#1877F2"},
+    {"slug": "twitter",   "name": "تويتر / X",  "icon": "🐦", "color": "#1DA1F2"},
+    {"slug": "youtube",   "name": "يوتيوب",     "icon": "▶️", "color": "#FF0000"},
+    {"slug": "snapchat",  "name": "سناب شات",   "icon": "👻", "color": "#FFFC00"},
+]
+
+
+class MarketChannel(Base):
+    __tablename__ = "market_channels"
+
+    id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String(50), unique=True, index=True, nullable=False)
+    name = Column(String(100), nullable=False)
+    icon = Column(String(20), default="📊")
+    color = Column(String(20), default="#64748b")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class MarketDataSnapshot(Base):
+    __tablename__ = "market_data_snapshots"
+
+    id = Column(Integer, primary_key=True, index=True)
+    channel_id = Column(Integer, ForeignKey("market_channels.id"), nullable=False, index=True)
+    source_type = Column(String(20), nullable=False)   # 'file' | 'url'
+    source_ref = Column(String(1000), default="")      # filename or URL
+    columns_json = Column(Text, default="[]")          # JSON array of column names
+    rows_json = Column(Text, default="[]")             # JSON array of row arrays (max 500)
+    summary = Column(Text, default="")
+    row_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)

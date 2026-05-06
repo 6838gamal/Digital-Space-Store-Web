@@ -17,13 +17,13 @@ A FastAPI-based e-commerce web application with a customer storefront, admin das
 
 ## Where things live
 - `app/main.py` — FastAPI app, all routes and startup logic
-- `app/models.py` — SQLAlchemy ORM tables (products, orders, knowledge_items, admin_users, participants, chat)
+- `app/models.py` — SQLAlchemy ORM tables (products, orders, knowledge_items, admin_users, participants, chat, market)
 - `app/database.py` — DB engine/session, reads `DATABASE_URL`
 - `app/chat_agent.py` — AI chat agent (intent detection + RAG + Gemini)
+- `app/market_parser.py` — File/URL parser (CSV, XLSX, JSON, TXT, PDF)
 - `templates/` — Jinja2 HTML templates
 - `static/` — CSS, JS, images (Bootstrap, jQuery, custom)
 - `requirements.txt` — Python dependencies
-- `.env.example` — env vars reference
 
 ## Architecture decisions
 - **PostgreSQL by default on Replit**: `DATABASE_URL` is auto-provisioned; SQLite is only used if `DATABASE_URL` is unset
@@ -36,6 +36,8 @@ A FastAPI-based e-commerce web application with a customer storefront, admin das
 - Customer storefront with products organized by category (fashion, electronics, jewellery)
 - AI-powered chat agent for product discovery and navigation
 - Admin dashboard to manage products, knowledge base, participants, and chat history
+- Customer insights: per-participant summary of interests extracted automatically from chat
+- Market analysis: per-channel dashboards (WhatsApp/Telegram/Instagram/TikTok/Facebook/X/YouTube/Snapchat) with file/URL upload, Chart.js charts, data tables, and archive
 - Dark/light mode and bilingual (Arabic/English) support
 
 ## User preferences

@@ -433,6 +433,10 @@ table.adm-table tr:hover td { background: rgba(255,255,255,.025); }
         <span>طلبات العملاء</span>
         <span class="adm-nav-badge">{{ insights_map | length }}</span>
       </a>
+      <a href="#" class="adm-nav-item" data-section="market">
+        <span class="adm-nav-icon">📊</span>
+        <span>تحليل السوق</span>
+      </a>
     </nav>
 
     <div class="adm-sidebar-bottom">
@@ -1679,5 +1683,578 @@ function handleChannelPublish(e, ch) {
     el.textContent = '✅ تم حفظ الإعداد — يمكنك ربط API حقيقي لاحقاً.';
   }, 1200);
 }
+</script>
+
+<!-- Chart.js CDN (market analysis only) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+<!-- ═══════════════════════════════════════════════════
+     MARKET ANALYSIS SECTION
+═══════════════════════════════════════════════════ -->
+<style>
+/* Market layout */
+.market-wrap { display:flex; gap:0; height:100%; min-height:calc(100vh - 80px); }
+.market-sidebar {
+  width:200px; flex-shrink:0; background:#06091a;
+  border-left:1px solid rgba(148,163,184,.1);
+  padding:16px 0; display:flex; flex-direction:column; gap:4px;
+}
+.market-chan-btn {
+  display:flex; align-items:center; gap:10px;
+  padding:11px 16px; border:none; background:transparent;
+  color:#94a3b8; cursor:pointer; font-size:13px; font-weight:600;
+  border-radius:0; transition:all .15s; text-align:right; width:100%;
+  position:relative; font-family:inherit;
+}
+.market-chan-btn:hover { background:rgba(148,163,184,.07); color:#e2e8f0; }
+.market-chan-btn.active { background:rgba(99,102,241,.15); color:#e2e8f0; }
+.market-chan-btn .chan-dot {
+  width:8px; height:8px; border-radius:50%; flex-shrink:0;
+}
+.market-chan-btn .chan-badge {
+  margin-right:auto; background:rgba(99,102,241,.25); color:#a5b4fc;
+  font-size:10px; padding:2px 6px; border-radius:10px; font-weight:700;
+}
+.market-content-area {
+  flex:1; overflow-y:auto; padding:24px;
+  background:#0d1120;
+}
+/* Channel header bar */
+.market-chan-header {
+  display:flex; align-items:center; gap:14px; margin-bottom:22px;
+  padding-bottom:16px; border-bottom:1px solid rgba(148,163,184,.1);
+}
+.market-chan-title { font-size:20px; font-weight:800; color:#f1f5f9; }
+.market-chan-sub { font-size:12px; color:#64748b; margin-top:3px; }
+/* Upload panel */
+.mkt-upload-panel {
+  background:#06091a; border:1px solid rgba(148,163,184,.1);
+  border-radius:14px; padding:20px; margin-bottom:24px;
+}
+.mkt-upload-tabs { display:flex; gap:8px; margin-bottom:16px; }
+.mkt-upload-tab {
+  padding:7px 18px; border-radius:8px; border:1px solid rgba(148,163,184,.15);
+  background:transparent; color:#64748b; cursor:pointer; font-size:13px;
+  font-weight:600; font-family:inherit; transition:all .15s;
+}
+.mkt-upload-tab.active { background:rgba(99,102,241,.2); color:#a5b4fc; border-color:rgba(99,102,241,.3); }
+.mkt-upload-body { display:none; }
+.mkt-upload-body.active { display:block; }
+.mkt-drop-zone {
+  border:2px dashed rgba(148,163,184,.25); border-radius:12px;
+  padding:30px; text-align:center; cursor:pointer; transition:all .2s;
+  color:#64748b;
+}
+.mkt-drop-zone:hover, .mkt-drop-zone.drag-over { border-color:rgba(99,102,241,.5); color:#a5b4fc; }
+.mkt-drop-zone input[type=file] { display:none; }
+/* Charts grid */
+.mkt-charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:24px; }
+@media (max-width:900px) { .mkt-charts-grid { grid-template-columns:1fr; } }
+.mkt-chart-card {
+  background:#06091a; border:1px solid rgba(148,163,184,.1);
+  border-radius:14px; padding:18px;
+}
+.mkt-chart-title { font-size:13px; font-weight:700; color:#94a3b8; margin-bottom:14px; }
+/* Data table */
+.mkt-table-wrap {
+  background:#06091a; border:1px solid rgba(148,163,184,.1);
+  border-radius:14px; overflow:hidden; margin-bottom:24px;
+}
+.mkt-table-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px; border-bottom:1px solid rgba(148,163,184,.08);
+}
+.mkt-table-scroll { overflow-x:auto; max-height:340px; overflow-y:auto; }
+.mkt-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+.mkt-table th {
+  background:#0a0f1e; color:#64748b; font-weight:700; font-size:11px;
+  padding:10px 14px; text-align:right; position:sticky; top:0; z-index:1;
+  border-bottom:1px solid rgba(148,163,184,.1); white-space:nowrap;
+}
+.mkt-table td { padding:9px 14px; border-bottom:1px solid rgba(148,163,184,.04); color:#cbd5e1; }
+.mkt-table tr:hover td { background:rgba(148,163,184,.04); }
+/* Archive */
+.mkt-archive-item {
+  background:#06091a; border:1px solid rgba(148,163,184,.08);
+  border-radius:12px; padding:14px 18px; margin-bottom:10px;
+  display:flex; align-items:flex-start; gap:14px;
+}
+.mkt-archive-badge { font-size:10px; font-weight:700; padding:3px 8px; border-radius:6px; }
+.mkt-archive-badge.file { background:rgba(99,102,241,.15); color:#a5b4fc; }
+.mkt-archive-badge.url  { background:rgba(34,197,94,.1);  color:#4ade80; }
+/* Empty */
+.mkt-empty { text-align:center; padding:60px 20px; color:#475569; font-size:15px; }
+</style>
+
+<section class="adm-section" id="section-market" style="padding:0;">
+  <div class="market-wrap">
+
+    <!-- ── Channel sidebar ── -->
+    <div class="market-sidebar" id="mkt-sidebar">
+      <div style="padding:12px 16px 8px;font-size:10px;font-weight:800;color:#475569;letter-spacing:.08em;">القنوات</div>
+      <!-- Buttons injected by JS -->
+    </div>
+
+    <!-- ── Channel content ── -->
+    <div class="market-content-area" id="mkt-content">
+      <!-- injected by JS -->
+      <div class="mkt-empty">⬅️ اختر قناة من القائمة الجانبية للبدء</div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+(function() {
+  var MKT = {
+    channels: [],
+    activeSlug: null,
+    activeData: null,  // latest snapshot
+    chartInstances: [],
+    archiveSnaps: [],
+
+    // ── Load channels list ──
+    loadChannels: function() {
+      fetch('/admin/api/market/channels')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          MKT.channels = Array.isArray(data) ? data : [];
+          MKT.renderSidebar();
+          if (MKT.channels.length) MKT.openChannel(MKT.channels[0].slug);
+        });
+    },
+
+    // ── Render sidebar buttons ──
+    renderSidebar: function() {
+      var sb = document.getElementById('mkt-sidebar');
+      var btns = MKT.channels.map(function(ch) {
+        return '<button class="market-chan-btn" data-slug="' + ch.slug + '" onclick="MKT.openChannel(\'' + ch.slug + '\')" title="' + ch.name + '">' +
+          '<span style="font-size:18px;">' + ch.icon + '</span>' +
+          '<span>' + ch.name + '</span>' +
+          (ch.snap_count ? '<span class="chan-badge">' + ch.snap_count + '</span>' : '') +
+        '</button>';
+      }).join('');
+      var heading = sb.querySelector('div');
+      sb.innerHTML = '';
+      sb.appendChild(heading);
+      sb.insertAdjacentHTML('beforeend', btns);
+    },
+
+    // ── Open a channel ──
+    openChannel: function(slug) {
+      MKT.activeSlug = slug;
+      // highlight sidebar
+      document.querySelectorAll('.market-chan-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.slug === slug);
+      });
+      var content = document.getElementById('mkt-content');
+      content.innerHTML = '<div style="padding:40px;color:#64748b;text-align:center;">⏳ جارٍ التحميل...</div>';
+
+      fetch('/admin/api/market/' + slug)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var ch = data.channel;
+          MKT.archiveSnaps = data.snapshots || [];
+          MKT.activeData = MKT.archiveSnaps[0] || null;
+          MKT.renderChannel(ch);
+        });
+    },
+
+    // ── Render full channel view ──
+    renderChannel: function(ch) {
+      var content = document.getElementById('mkt-content');
+      var snap = MKT.activeData;
+
+      var html = [
+        '<div class="market-chan-header">',
+          '<span style="font-size:32px;">' + ch.icon + '</span>',
+          '<div>',
+            '<div class="market-chan-title">' + ch.name + '</div>',
+            '<div class="market-chan-sub">',
+              snap ? ('آخر تحديث: ' + snap.created_at + ' | ' + snap.row_count + ' صف') : 'لا توجد بيانات بعد',
+            '</div>',
+          '</div>',
+          snap ? '<button class="adm-btn adm-btn-sm" onclick="MKT.exportCSV()" style="margin-right:auto;">⬇️ تصدير CSV</button>' : '',
+        '</div>',
+
+        // Upload panel
+        MKT.uploadPanelHTML(ch.slug),
+
+        // Charts (if data)
+        snap && snap.columns && snap.columns.length ? MKT.chartsHTML() : '',
+
+        // Table (if data)
+        snap && snap.columns && snap.columns.length ? MKT.tableHTML(snap) : '',
+
+        // Archive
+        MKT.archiveHTML(),
+      ].join('');
+
+      content.innerHTML = html;
+
+      // Init charts after render
+      if (snap && snap.columns && snap.columns.length) {
+        MKT.initCharts(snap);
+      }
+
+      // Drop zone events
+      MKT.initDropZone();
+    },
+
+    // ── Upload panel HTML ──
+    uploadPanelHTML: function(slug) {
+      return [
+        '<div class="mkt-upload-panel">',
+          '<div style="font-size:13px;font-weight:700;color:#94a3b8;margin-bottom:14px;">➕ إضافة بيانات جديدة</div>',
+          '<div class="mkt-upload-tabs">',
+            '<button class="mkt-upload-tab active" onclick="MKT.switchTab(\'file\')">📁 ملف</button>',
+            '<button class="mkt-upload-tab" onclick="MKT.switchTab(\'url\')">🔗 رابط</button>',
+          '</div>',
+          // File tab
+          '<div class="mkt-upload-body active" id="mkt-tab-file">',
+            '<div class="mkt-drop-zone" id="mkt-drop-zone" onclick="document.getElementById(\'mkt-file-input\').click()">',
+              '<input type="file" id="mkt-file-input" accept=".csv,.xlsx,.xls,.json,.txt,.pdf" onchange="MKT.handleFileSelect(this)">',
+              '<div style="font-size:28px;margin-bottom:10px;">📂</div>',
+              '<div style="font-size:13px;font-weight:600;">اضغط لاختيار ملف أو اسحب وأسقط</div>',
+              '<div style="font-size:11.5px;margin-top:6px;color:#475569;">CSV · XLSX · JSON · TXT · PDF</div>',
+            '</div>',
+          '</div>',
+          // URL tab
+          '<div class="mkt-upload-body" id="mkt-tab-url">',
+            '<div style="display:flex;gap:10px;align-items:center;">',
+              '<input id="mkt-url-input" type="url" class="adm-input" placeholder="https://example.com/data.csv" style="flex:1;">',
+              '<button class="adm-btn" onclick="MKT.handleURLSubmit()">جلب</button>',
+            '</div>',
+            '<div style="font-size:11px;color:#475569;margin-top:8px;">يدعم روابط CSV و JSON المباشرة</div>',
+          '</div>',
+          '<div id="mkt-upload-status" style="margin-top:12px;font-size:13px;color:#60a5fa;display:none;"></div>',
+        '</div>',
+      ].join('');
+    },
+
+    switchTab: function(tab) {
+      document.querySelectorAll('.mkt-upload-tab').forEach(function(b,i) {
+        b.classList.toggle('active', (i === 0 && tab === 'file') || (i === 1 && tab === 'url'));
+      });
+      document.getElementById('mkt-tab-file').classList.toggle('active', tab === 'file');
+      document.getElementById('mkt-tab-url').classList.toggle('active', tab === 'url');
+    },
+
+    // ── Drag & drop ──
+    initDropZone: function() {
+      var zone = document.getElementById('mkt-drop-zone');
+      if (!zone) return;
+      zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('drag-over'); });
+      zone.addEventListener('dragleave', function() { zone.classList.remove('drag-over'); });
+      zone.addEventListener('drop', function(e) {
+        e.preventDefault(); zone.classList.remove('drag-over');
+        var f = e.dataTransfer.files[0];
+        if (f) MKT.uploadFile(f);
+      });
+    },
+
+    handleFileSelect: function(input) {
+      if (input.files[0]) MKT.uploadFile(input.files[0]);
+    },
+
+    handleURLSubmit: function() {
+      var url = (document.getElementById('mkt-url-input') || {}).value || '';
+      if (!url.trim()) { alert('أدخل رابطاً صالحاً.'); return; }
+      MKT.showStatus('⏳ جارٍ جلب الرابط...');
+      var fd = new FormData();
+      fd.append('url', url.trim());
+      MKT.doUpload(fd);
+    },
+
+    uploadFile: function(file) {
+      MKT.showStatus('⏳ جارٍ رفع ' + file.name + '...');
+      var fd = new FormData();
+      fd.append('file', file);
+      MKT.doUpload(fd);
+    },
+
+    doUpload: function(fd) {
+      fetch('/admin/api/market/' + MKT.activeSlug + '/upload', { method:'POST', body:fd })
+        .then(function(r) { return r.json(); })
+        .then(function(snap) {
+          if (snap.error) { MKT.showStatus('❌ ' + snap.error, true); return; }
+          MKT.showStatus('✅ تم رفع البيانات: ' + snap.row_count + ' صف | ' + snap.summary.slice(0,80));
+          MKT.archiveSnaps.unshift(snap);
+          MKT.activeData = snap;
+          // re-open to refresh view
+          var ch = MKT.channels.find(function(c) { return c.slug === MKT.activeSlug; });
+          if (ch) { ch.snap_count = (ch.snap_count || 0) + 1; MKT.renderSidebar(); }
+          // Refresh active buttons
+          document.querySelectorAll('.market-chan-btn').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.slug === MKT.activeSlug);
+          });
+          var ch2 = MKT.channels.find(function(c) { return c.slug === MKT.activeSlug; });
+          MKT.renderChannel(ch2 || { slug: MKT.activeSlug, name: MKT.activeSlug, icon:'📊' });
+        })
+        .catch(function(e) { MKT.showStatus('❌ خطأ: ' + e.message, true); });
+    },
+
+    showStatus: function(msg, isError) {
+      var el = document.getElementById('mkt-upload-status');
+      if (!el) return;
+      el.style.display = 'block';
+      el.style.color = isError ? '#f87171' : '#60a5fa';
+      el.textContent = msg;
+    },
+
+    // ── Charts HTML placeholders ──
+    chartsHTML: function() {
+      return [
+        '<div class="mkt-charts-grid">',
+          '<div class="mkt-chart-card">',
+            '<div class="mkt-chart-title">📊 مخطط الأعمدة</div>',
+            '<canvas id="mkt-chart-bar" height="200"></canvas>',
+          '</div>',
+          '<div class="mkt-chart-card">',
+            '<div class="mkt-chart-title">🥧 مخطط دائري</div>',
+            '<canvas id="mkt-chart-pie" height="200"></canvas>',
+          '</div>',
+          '<div class="mkt-chart-card">',
+            '<div class="mkt-chart-title">📈 مخطط الخط</div>',
+            '<canvas id="mkt-chart-line" height="200"></canvas>',
+          '</div>',
+          '<div class="mkt-chart-card">',
+            '<div class="mkt-chart-title">🎯 مقارنة الأعمدة</div>',
+            '<canvas id="mkt-chart-radar" height="200"></canvas>',
+          '</div>',
+        '</div>',
+      ].join('');
+    },
+
+    // ── Build Chart.js charts ──
+    initCharts: function(snap) {
+      MKT.chartInstances.forEach(function(c) { try { c.destroy(); } catch(e){} });
+      MKT.chartInstances = [];
+
+      var cols = snap.columns || [];
+      var rows = snap.rows || [];
+      if (!cols.length || !rows.length) return;
+
+      // Find label col (first string-heavy col) and numeric cols
+      var labelColIdx = 0;
+      var numericCols = [];
+      cols.forEach(function(c, i) {
+        var vals = rows.map(function(r) { return parseFloat((r[i]||'').toString().replace(/,/g,'')); });
+        var validNums = vals.filter(function(v) { return !isNaN(v); });
+        if (validNums.length >= rows.length * 0.5) {
+          numericCols.push({ name: c, idx: i, vals: vals });
+        }
+      });
+
+      var labelRows = rows.slice(0, 20);
+      var labels = labelRows.map(function(r) {
+        var v = (r[labelColIdx] || '').toString().slice(0,20);
+        return v || '—';
+      });
+
+      var PALETTE = [
+        'rgba(99,102,241,.8)','rgba(236,72,153,.8)','rgba(34,197,94,.8)',
+        'rgba(251,191,36,.8)','rgba(239,68,68,.8)','rgba(14,165,233,.8)',
+        'rgba(168,85,247,.8)','rgba(249,115,22,.8)',
+      ];
+
+      // Bar chart (first numeric col vs labels)
+      if (numericCols.length) {
+        var barData = numericCols[0].vals.slice(0, 20);
+        var barEl = document.getElementById('mkt-chart-bar');
+        if (barEl) {
+          MKT.chartInstances.push(new Chart(barEl, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{ label: numericCols[0].name, data: barData, backgroundColor: PALETTE }],
+            },
+            options: MKT.chartOpts('bar'),
+          }));
+        }
+      }
+
+      // Pie chart
+      if (numericCols.length) {
+        var pieEl = document.getElementById('mkt-chart-pie');
+        if (pieEl) {
+          MKT.chartInstances.push(new Chart(pieEl, {
+            type: 'doughnut',
+            data: {
+              labels: labels,
+              datasets: [{ data: numericCols[0].vals.slice(0,10), backgroundColor: PALETTE }],
+            },
+            options: MKT.chartOpts('pie'),
+          }));
+        }
+      }
+
+      // Line chart (first numeric col)
+      if (numericCols.length) {
+        var lineEl = document.getElementById('mkt-chart-line');
+        if (lineEl) {
+          MKT.chartInstances.push(new Chart(lineEl, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: numericCols.slice(0,3).map(function(nc, i) {
+                return { label: nc.name, data: nc.vals.slice(0,20), borderColor: PALETTE[i], backgroundColor: PALETTE[i].replace('.8)','.2)'), fill: i === 0, tension: 0.4 };
+              }),
+            },
+            options: MKT.chartOpts('line'),
+          }));
+        }
+      }
+
+      // Radar / multi-col comparison (up to 6 rows, all numeric cols)
+      if (numericCols.length >= 2) {
+        var radarEl = document.getElementById('mkt-chart-radar');
+        if (radarEl) {
+          MKT.chartInstances.push(new Chart(radarEl, {
+            type: 'bar',
+            data: {
+              labels: numericCols.slice(0,6).map(function(nc) { return nc.name; }),
+              datasets: rows.slice(0,5).map(function(row, ri) {
+                var vals = numericCols.slice(0,6).map(function(nc) { return parseFloat((row[nc.idx]||'0').toString().replace(/,/g,'')) || 0; });
+                return { label: (row[labelColIdx]||'').toString().slice(0,15) || 'صف '+(ri+1), data: vals, backgroundColor: PALETTE[ri] };
+              }),
+            },
+            options: Object.assign({}, MKT.chartOpts('bar'), { indexAxis: 'y' }),
+          }));
+        }
+      }
+    },
+
+    chartOpts: function(type) {
+      var base = {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
+        },
+      };
+      if (type !== 'pie') {
+        base.scales = {
+          x: { ticks: { color:'#64748b', font:{size:10} }, grid: { color:'rgba(148,163,184,.06)' } },
+          y: { ticks: { color:'#64748b', font:{size:10} }, grid: { color:'rgba(148,163,184,.06)' } },
+        };
+      }
+      return base;
+    },
+
+    // ── Data table ──
+    tableHTML: function(snap) {
+      var cols = snap.columns || [];
+      var rows = snap.rows || [];
+      var displayed = rows.slice(0, 100);
+
+      var thead = '<tr>' + cols.map(function(c) { return '<th>' + MKT.esc(c) + '</th>'; }).join('') + '</tr>';
+      var tbody = displayed.map(function(row) {
+        return '<tr>' + cols.map(function(_, i) { return '<td>' + MKT.esc((row[i]||'').toString()) + '</td>'; }).join('') + '</tr>';
+      }).join('');
+
+      return [
+        '<div class="mkt-table-wrap">',
+          '<div class="mkt-table-header">',
+            '<span style="font-size:13px;font-weight:700;color:#94a3b8;">📋 جدول البيانات</span>',
+            '<span style="font-size:12px;color:#475569;">عرض ' + displayed.length + ' من ' + snap.row_count + ' صف</span>',
+          '</div>',
+          '<div class="mkt-table-scroll">',
+            '<table class="mkt-table">',
+              '<thead>' + thead + '</thead>',
+              '<tbody>' + tbody + '</tbody>',
+            '</table>',
+          '</div>',
+        '</div>',
+      ].join('');
+    },
+
+    // ── Archive ──
+    archiveHTML: function() {
+      if (!MKT.archiveSnaps.length) return '<div class="mkt-empty">لا يوجد أرشيف بعد. أضف بيانات للبدء.</div>';
+      var html = '<div style="font-size:13px;font-weight:700;color:#94a3b8;margin-bottom:12px;">🗂️ الأرشيف</div>';
+      html += MKT.archiveSnaps.map(function(s) {
+        return [
+          '<div class="mkt-archive-item">',
+            '<div style="flex:1;">',
+              '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">',
+                '<span class="mkt-archive-badge ' + s.source_type + '">' + (s.source_type === 'file' ? '📁 ملف' : '🔗 رابط') + '</span>',
+                '<span style="font-size:12px;font-weight:600;color:#e2e8f0;">' + MKT.esc(s.source_ref.length > 50 ? s.source_ref.slice(0,50)+'…' : s.source_ref) + '</span>',
+              '</div>',
+              '<div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">' + MKT.esc(s.summary.slice(0, 120)) + (s.summary.length > 120 ? '…' : '') + '</div>',
+              '<div style="display:flex;gap:14px;font-size:11px;color:#475569;">',
+                '<span>📅 ' + s.created_at + '</span>',
+                '<span>📊 ' + s.row_count + ' صف</span>',
+              '</div>',
+            '</div>',
+            '<button onclick="MKT.loadSnap(' + s.id + ')" style="background:rgba(99,102,241,.15);border:none;color:#a5b4fc;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:inherit;" title="عرض">👁️ عرض</button>',
+            '<button onclick="MKT.deleteSnap(' + s.id + ')" style="background:rgba(239,68,68,.1);border:none;color:#f87171;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px;margin-right:6px;" title="حذف">🗑️</button>',
+          '</div>',
+        ].join('');
+      }).join('');
+      return html;
+    },
+
+    loadSnap: function(snapId) {
+      var s = MKT.archiveSnaps.find(function(x) { return x.id === snapId; });
+      if (!s) return;
+      MKT.activeData = s;
+      var ch = MKT.channels.find(function(c) { return c.slug === MKT.activeSlug; }) || { slug: MKT.activeSlug, name: MKT.activeSlug, icon:'📊' };
+      MKT.renderChannel(ch);
+    },
+
+    deleteSnap: function(snapId) {
+      if (!confirm('هل تريد حذف هذا السجل من الأرشيف؟')) return;
+      fetch('/admin/api/market/snapshot/' + snapId, { method:'DELETE' })
+        .then(function() {
+          MKT.archiveSnaps = MKT.archiveSnaps.filter(function(s) { return s.id !== snapId; });
+          if (MKT.activeData && MKT.activeData.id === snapId) MKT.activeData = MKT.archiveSnaps[0] || null;
+          var ch = MKT.channels.find(function(c) { return c.slug === MKT.activeSlug; }) || { slug: MKT.activeSlug, name: MKT.activeSlug, icon:'📊' };
+          MKT.renderChannel(ch);
+        });
+    },
+
+    exportCSV: function() {
+      var snap = MKT.activeData;
+      if (!snap || !snap.columns || !snap.rows) return;
+      var lines = [snap.columns.join(',')];
+      snap.rows.forEach(function(r) {
+        lines.push(r.map(function(c) { return '"' + (c||'').toString().replace(/"/g,'""') + '"'; }).join(','));
+      });
+      var blob = new Blob([lines.join('\n')], { type:'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a'); a.href = url;
+      a.download = (MKT.activeSlug||'data') + '-' + new Date().toISOString().slice(0,10) + '.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    },
+
+    esc: function(s) {
+      return (s||'').toString()
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    },
+  };
+
+  // Init when market section becomes visible
+  var marketInited = false;
+  document.addEventListener('DOMContentLoaded', function() {
+    // Patch the global switchSection used by the admin nav
+    var _origSwitch = window.switchSection;
+    window.switchSection = function(name) {
+      if (typeof _origSwitch === 'function') _origSwitch(name);
+      if (name === 'market' && !marketInited) {
+        marketInited = true;
+        MKT.loadChannels();
+      }
+    };
+    // Also hook the nav click handler directly as a fallback
+    var mktNavBtn = document.querySelector('[data-section="market"]');
+    if (mktNavBtn) {
+      mktNavBtn.addEventListener('click', function() {
+        if (!marketInited) { marketInited = true; MKT.loadChannels(); }
+      });
+    }
+  });
+  window.MKT = MKT;
+})();
 </script>
 {% endblock %}
