@@ -1,85 +1,52 @@
 # Digital Space Store (Gamal Store Backend)
 
-## Overview
-A FastAPI-based e-commerce web application featuring a customer-facing storefront, an admin dashboard, and an integrated AI Chat Agent for product discovery. The app supports Arabic and English.
+A FastAPI-based e-commerce web application with a customer storefront, admin dashboard, and AI chat agent for product discovery. Supports Arabic and English.
 
-## Tech Stack
+## Run & Operate
+- **Start**: `uv run uvicorn app.main:app --host 0.0.0.0 --port 5000`
+- **Required env vars**: `SESSION_SECRET` (set), `DATABASE_URL` (PostgreSQL, auto-provisioned)
+- **Optional env vars**: `GEMINI_API_KEY` (enables Gemini AI replies in chat), `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` (enables Google OAuth for admin login)
+
+## Stack
 - **Backend**: Python 3.12 + FastAPI + Uvicorn
-- **Database**: SQLAlchemy ORM with SQLite (default) or PostgreSQL (production)
+- **Database**: SQLAlchemy ORM with PostgreSQL (Replit-provisioned) or SQLite fallback
 - **Templating**: Jinja2 server-side rendered HTML
 - **Frontend**: Bootstrap 4, jQuery
-- **Auth**: Session-based (itsdangerous) + optional Google OAuth2 for admins
+- **Auth**: Cookie-based sessions (itsdangerous/SessionMiddleware) + optional Google OAuth2 for admins
+- **AI**: Google Gemini via `google-genai` (optional; chat works in fallback mode without it)
 
-## Project Structure
-```
-app/
-  main.py          - FastAPI app, all routes and startup logic
-  models.py        - SQLAlchemy ORM models
-  database.py      - DB connection and session management
-  chat_agent.py    - AI chat agent (intent detection + RAG)
-templates/         - Jinja2 HTML templates
-static/            - CSS, JS, images
-requirements.txt   - Python dependencies (cleaned, no duplicates)
-Dockerfile         - Docker image build instructions
-docker-compose.yml - App + PostgreSQL orchestration
-.env.example       - Environment variables template
-.dockerignore      - Docker build exclusions
-```
+## Where things live
+- `app/main.py` — FastAPI app, all routes and startup logic
+- `app/models.py` — SQLAlchemy ORM tables (products, orders, knowledge_items, admin_users, participants, chat)
+- `app/database.py` — DB engine/session, reads `DATABASE_URL`
+- `app/chat_agent.py` — AI chat agent (intent detection + RAG + Gemini)
+- `templates/` — Jinja2 HTML templates
+- `static/` — CSS, JS, images (Bootstrap, jQuery, custom)
+- `requirements.txt` — Python dependencies
+- `.env.example` — env vars reference
 
-## Docker Deployment
-Copy `.env.example` to `.env`, fill in your values, then run:
-```bash
-docker compose up -d --build
-```
-The app will be available at `http://localhost:5000`.
-PostgreSQL data is persisted in the `postgres_data` Docker volume.
+## Architecture decisions
+- **PostgreSQL by default on Replit**: `DATABASE_URL` is auto-provisioned; SQLite is only used if `DATABASE_URL` is unset
+- **Session-based auth (no JWT)**: Admin login stored in server-side session cookie; no external auth provider required
+- **Demo admin login**: Available in non-production (`NODE_ENV != production`) — enter any email/name at `/?admin=1`
+- **Chat fallback**: If `GEMINI_API_KEY` is absent, the agent returns rule-based responses using intent detection
+- **Startup migrations**: `on_startup()` creates tables and runs safe `ALTER TABLE` column additions automatically
 
-## Running the App
-The app starts via the "Start application" workflow:
-```
-uvicorn app.main:app --host 0.0.0.0 --port 5000
-```
+## Product
+- Customer storefront with products organized by category (fashion, electronics, jewellery)
+- AI-powered chat agent for product discovery and navigation
+- Admin dashboard to manage products, knowledge base, participants, and chat history
+- Dark/light mode and bilingual (Arabic/English) support
 
-## Key Routes
-- `GET /` — Storefront home page
-- `GET /admin` — Admin dashboard (login required)
-- `GET /admin/login` — Admin login page (demo login available in non-production)
-- `POST /api/chat` — AI chat agent endpoint
-- `GET /health` — Health check
+## User preferences
+- No changes: preserve existing code structure and dependencies
 
-## Environment Variables
-- `SESSION_SECRET` — Secret key for session middleware (required for production)
-- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — Optional, enables Google OAuth for admin login
-- `NODE_ENV` — Set to `production` to disable demo admin login
+## Gotchas
+- `GEMINI_API_KEY` must be added as a Secret for full AI chat functionality
+- Google OAuth for admins requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` Secrets
+- The admin modal password on the storefront is `111`
+- Bottom nav bar and theme overrides live in `static/css/theme.css` (loads last, uses `!important`)
 
-## Database
-- Defaults to SQLite (`store.db`) for development
-- Supports PostgreSQL via `DATABASE_URL` environment variable
-- Tables and seed data are created automatically on startup
-
-## UI / UX Features
-- **Flutter-style Drawers**: Both the store sidebar and AI chat use slide-in drawers with overlay
-  - Store drawer: `#mySidenav.store-drawer` (opens from left; RTL: from right)
-  - Chat drawer: conversation history (opens from left)
-  - Close via ×, overlay click, or Escape key
-- **Dark / Light Mode**: Full CSS variable system in `static/css/theme.css` (loads last; overrides all)
-  - `:root` = light mode variables; `[data-theme="dark"]` overrides all colors
-  - Persisted in `localStorage` key `dsTheme`
-- **Bilingual (AR/EN)**: RTL/LTR switching on `<html dir>`, language persisted in `dsLang`
-  - `data-en` / `data-ar` attributes + `data-trans` keys for dynamic content
-- **Bottom nav bar**: Theme-aware via CSS variables (`--bar-bg`, `--bar-text`, `--bar-text-act`)
-  - Overrides footer.css hardcoded colors in theme.css with `!important`
-- **Admin modal**: Password `111`, slides in from top with shake animation on error
-- **FAB**: Robot icon links to `/chat`, always above bottom bar
-
-## Key CSS Architecture
-- `static/css/theme.css` — master theme file (CSS vars + all component overrides)
-  - Classes: `.store-drawer`, `.sd-item`, `.sd-section-label`, `.sd-admin-btn`, `.store-header-wrap`, `.store-top-bar`, `.store-main-header`, `.store-menu-btn`, `.store-action-btn`
-  - Bottom bar: `.bottom-bar`, `.nav-item` — fully theme-aware
-- `templates/banner.html` — store header + drawer HTML
-- `templates/chat.html` — full-screen chat with its own drawer for history
-- `templates/footer.html` — bottom bar + FAB
-- `templates/base.html` — translations, theme/lang JS, admin modal, `openNav()`/`closeNav()`
-
-## Dependencies
-All installed via pip: fastapi, uvicorn, sqlalchemy, python-dotenv, jinja2, psycopg2-binary, itsdangerous, python-multipart
+## Pointers
+- Workflows skill: `.local/skills/workflows/SKILL.md`
+- Environment secrets skill: `.local/skills/environment-secrets/SKILL.md`
