@@ -2,19 +2,52 @@
 
 {% block content %}
 
+  <!-- ===== Hero Banner ===== -->
+  {% include 'banner.html' %}
+  <!-- ===== /Hero Banner ===== -->
 
-      <!-- banner bg main start -->
-     {% include 'banner.html' %}
-      <!-- banner bg main end -->
-      <!-- fashion section start -->
-      {% include 'fashion.html' %}
-      <!-- fashion section end -->
-      <!-- electronic section start -->
-      {% include 'electronic.html' %}
-      <!-- electronic section end -->
-      <!-- jewellery  section start -->
-     {% include 'jewellery.html' %}
-      <!-- jewellery  section end -->
-      <!-- footer section start -->
-     {% include 'footer.html' %}
+  <!-- ===== Quick Problem Solver (المميز) ===== -->
+  {% include 'partials/problem_solver.html' %}
+  <!-- ===== /Quick Problem Solver ===== -->
+
+  <!-- ===== Category Grid ===== -->
+  {% include 'partials/category_grid.html' %}
+  <!-- ===== /Category Grid ===== -->
+
+  <!-- ===== Most Wanted ===== -->
+  {% include 'partials/most_wanted.html' %}
+  <!-- ===== /Most Wanted ===== -->
+
+  <!-- ===== Tech Filters Bar ===== -->
+  {% include 'partials/tech_filters.html' %}
+  <!-- ===== /Tech Filters Bar ===== -->
+
+  <!-- ===== New in Store ===== -->
+  {% include 'partials/new_in_store.html' %}
+  <!-- ===== /New in Store ===== -->
+
+  <!-- ===== Offers & Bundles ===== -->
+  {% include 'partials/offers_bundles.html' %}
+  <!-- ===== /Offers & Bundles ===== -->
+
+  <!-- ===== Free Section ===== -->
+  {% include 'partials/free_section.html' %}
+  <!-- ===== /Free Section ===== -->
+
+  <!-- ===== Services CTA ===== -->
+  {% include 'partials/services_cta.html' %}
+  <!-- ===== /Services CTA ===== -->
+
+  <!-- ===== Trust / Why Us ===== -->
+  {% include 'partials/trust_section.html' %}
+  <!-- ===== /Trust Section ===== -->
+
+  <!-- ===== Newsletter ===== -->
+  {% include 'partials/newsletter.html' %}
+  <!-- ===== /Newsletter ===== -->
+
+  <!-- ===== Footer ===== -->
+  {% include 'footer.html' %}
+  <!-- ===== /Footer ===== -->
+
 {% endblock %}
