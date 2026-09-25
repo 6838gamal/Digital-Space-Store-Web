@@ -4,27 +4,87 @@
 
     <div class="section-header-row">
       <h2 class="section-title">
-        🔥 <span data-en="Most Wanted" data-ar="الأكثر طلباً">Most Wanted</span>
+        🔥 <span data-en="Most Wanted" data-ar="الأكثر مبيعاً">Most Wanted</span>
       </h2>
-      <a href="/?tab=most-wanted" class="see-all" data-en="See all →" data-ar="عرض الكل ←">See all →</a>
+      <a href="/?tab=most-wanted" class="see-all" data-en="View all →" data-ar="عرض الكل ←">View all →</a>
     </div>
 
     <div class="product-scroll">
 
-      {% for product in most_wanted_products %}
-      <div class="product-card">
-        <div class="product-badge">🔥</div>
-        <a href="/product/{{ product.id }}">
-          <img src="{{ product.image }}" alt="{{ product.name }}" class="product-img">
-          <h3 class="product-name">{{ product.name }}</h3>
-        </a>
-        <div class="product-price">{{ product.price }} $</div>
-        <button class="add-to-cart-btn" data-id="{{ product.id }}">
-          <i class="fa fa-shopping-cart"></i>
-          <span data-en="Add" data-ar="أضف">Add</span>
-        </button>
-      </div>
-      {% endfor %}
+      {% if most_wanted_products %}
+        {% for product in most_wanted_products %}
+        <article class="product-card">
+
+          <!-- Media + Badges -->
+          <div class="product-media">
+            <div class="product-badges">
+              {% if product.is_free %}
+                <span class="badge badge-free" data-en="Free" data-ar="مجاني">Free</span>
+              {% elif product.discount_percent %}
+                <span class="badge badge-discount">
+                  <span data-en="Save" data-ar="خصم">Save</span> {{ product.discount_percent }}%
+                </span>
+              {% endif %}
+              {% if product.is_new %}
+                <span class="badge badge-new" data-en="New" data-ar="جديد">New</span>
+              {% endif %}
+            </div>
+            <a href="/product/{{ product.id }}">
+              <img src="{{ product.image }}"
+                   alt="{{ product.name }}"
+                   class="product-img"
+                   loading="lazy">
+            </a>
+          </div>
+
+          <!-- Body -->
+          <div class="product-body">
+
+            {% if product.author_name %}
+            <div class="product-author">
+              <i class="fa fa-store"></i>
+              <span>{{ product.author_name }}</span>
+            </div>
+            {% endif %}
+
+            <h3 class="product-name">
+              <a href="/product/{{ product.id }}">{{ product.name }}</a>
+            </h3>
+
+            {% if product.rating %}
+            <div class="product-meta">
+              <div class="product-rating">
+                <span class="stars">★</span>
+                <span>{{ product.rating }}</span>
+                <span class="count">({{ product.reviews_count or 0 }})</span>
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="product-price-row">
+              {% if product.is_free %}
+                <span class="price-free" data-en="Free" data-ar="مجاني">Free</span>
+              {% else %}
+                <span class="price-current">{{ product.price }} $</span>
+                {% if product.old_price %}
+                  <span class="price-old">{{ product.old_price }} $</span>
+                {% endif %}
+              {% endif %}
+            </div>
+
+            <button class="add-to-cart-btn" data-id="{{ product.id }}">
+              <i class="fa fa-shopping-cart"></i>
+              <span data-en="Add to cart" data-ar="أضف للسلة">Add to cart</span>
+            </button>
+
+          </div>
+        </article>
+        {% endfor %}
+      {% else %}
+        <p class="empty-msg" data-en="No products available yet." data-ar="لا توجد منتجات متاحة بعد.">
+          No products available yet.
+        </p>
+      {% endif %}
 
     </div>
   </div>
