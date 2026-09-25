@@ -6,10 +6,10 @@
   <!-- Drawer Header: logo + controls -->
   <div class="store-drawer-header">
     <div class="store-drawer-brand">
-      <div class="store-drawer-avatar">🛍️</div>
+      <div class="store-drawer-avatar">🧠</div>
       <div>
         <div class="store-drawer-name" data-trans="sidebar-title">Digital Space</div>
-        <div class="store-drawer-tagline" data-en="Your Smart Store" data-ar="متجرك الذكي">Your Smart Store</div>
+        <div class="store-drawer-tagline" data-en="Ready Digital Solutions" data-ar="حلول رقمية جاهزة">Ready Digital Solutions</div>
       </div>
     </div>
     <button class="store-drawer-close" onclick="closeNav()" aria-label="Close">&#x2715;</button>
@@ -38,35 +38,341 @@
       <span class="sd-item-text" data-en="Home" data-ar="الرئيسية">Home</span>
     </a>
 
-    <!-- Products (expandable) -->
-    <div class="sd-item sd-expandable" id="sd-products-toggle">
-      <span class="sd-item-icon">🛍️</span>
-      <span class="sd-item-text" data-en="Products" data-ar="المنتجات">Products</span>
-      <span class="sd-chevron" id="sd-products-chevron">›</span>
+    <!-- ===== Main Categories (Expandable) ===== -->
+
+    <!-- 1. Books & E-books -->
+    <div class="sd-item sd-expandable" id="sd-books-toggle">
+      <span class="sd-item-icon">📚</span>
+      <span class="sd-item-text" data-en="Books & E-books" data-ar="كتب وكتب إلكترونية">Books & E-books</span>
+      <span class="sd-chevron" id="sd-books-chevron">›</span>
     </div>
-    <div class="sd-submenu" id="sd-products-submenu">
-      <a href="/?tab=fashion" class="sd-item sd-sub">
-        <span class="sd-item-icon">👗</span>
-        <span class="sd-item-text" data-en="Fashion" data-ar="الموضة">Fashion</span>
+    <div class="sd-submenu" id="sd-books-submenu">
+      <a href="/?cat=books&tag=python" class="sd-item sd-sub">
+        <span class="sd-item-icon">🐍</span>
+        <span class="sd-item-text" data-en="Python" data-ar="Python">Python</span>
       </a>
-      <a href="/?tab=electronic" class="sd-item sd-sub">
+      <a href="/?cat=books&tag=ai" class="sd-item sd-sub">
+        <span class="sd-item-icon">🤖</span>
+        <span class="sd-item-text" data-en="Artificial Intelligence" data-ar="الذكاء الاصطناعي">Artificial Intelligence</span>
+      </a>
+      <a href="/?cat=books&tag=programming" class="sd-item sd-sub">
         <span class="sd-item-icon">💻</span>
-        <span class="sd-item-text" data-en="Electronics" data-ar="الإلكترونيات">Electronics</span>
+        <span class="sd-item-text" data-en="Programming" data-ar="البرمجة">Programming</span>
       </a>
-      <a href="/?tab=jewellery" class="sd-item sd-sub">
-        <span class="sd-item-icon">💍</span>
-        <span class="sd-item-text" data-en="Jewellery" data-ar="المجوهرات">Jewellery</span>
+      <a href="/?cat=books&tag=automation" class="sd-item sd-sub">
+        <span class="sd-item-icon">⚙️</span>
+        <span class="sd-item-text" data-en="Automation" data-ar="الأتمتة">Automation</span>
+      </a>
+      <a href="/?cat=books&tag=business" class="sd-item sd-sub">
+        <span class="sd-item-icon">💼</span>
+        <span class="sd-item-text" data-en="Business & Tech" data-ar="الأعمال والتقنية">Business & Tech</span>
       </a>
     </div>
 
-    <a href="/?tab=new" class="sd-item">
-      <span class="sd-item-icon">✨</span>
-      <span class="sd-item-text" data-en="New Arrivals" data-ar="وصل حديثاً">New Arrivals</span>
+    <!-- 2. Templates & Ready Files -->
+    <div class="sd-item sd-expandable" id="sd-templates-toggle">
+      <span class="sd-item-icon">📄</span>
+      <span class="sd-item-text" data-en="Templates & Files" data-ar="قوالب وملفات جاهزة">Templates & Files</span>
+      <span class="sd-chevron" id="sd-templates-chevron">›</span>
+    </div>
+    <div class="sd-submenu" id="sd-templates-submenu">
+      <a href="/?cat=templates&tag=excel" class="sd-item sd-sub">
+        <span class="sd-item-icon">📊</span>
+        <span class="sd-item-text" data-en="Excel" data-ar="Excel">Excel</span>
+      </a>
+      <a href="/?cat=templates&tag=powerpoint" class="sd-item sd-sub">
+        <span class="sd-item-icon">📽️</span>
+        <span class="sd-item-text" data-en="PowerPoint" data-ar="PowerPoint">PowerPoint</span>
+      </a>
+      <a href="/?cat=templates&tag=word" class="sd-item sd-sub">
+        <span class="sd-item-icon">📝</span>
+        <span class="sd-item-text" data-en="Word" data-ar="Word">Word</span>
+      </a>
+      <a href="/?cat=templates&tag=pdf" class="sd-item sd-sub">
+        <span class="sd-item-icon">📕</span>
+        <span class="sd-item-text" data-en="PDF" data-ar="PDF">PDF</span>
+      </a>
+      <a href="/?cat=templates&tag=reports" class="sd-item sd-sub">
+        <span class="sd-item-icon">📈</span>
+        <span class="sd-item-text" data-en="Presentations & Reports" data-ar="عروض وتقارير">Presentations & Reports</span>
+      </a>
+      <a href="/?cat=templates&tag=business-forms" class="sd-item sd-sub">
+        <span class="sd-item-icon">🗂️</span>
+        <span class="sd-item-text" data-en="Business Forms" data-ar="نماذج أعمال">Business Forms</span>
+      </a>
+    </div>
+
+    <!-- 3. Ready Software Tools -->
+    <div class="sd-item sd-expandable" id="sd-tools-toggle">
+      <span class="sd-item-icon">🛠️</span>
+      <span class="sd-item-text" data-en="Software Tools" data-ar="أدوات برمجية جاهزة">Software Tools</span>
+      <span class="sd-chevron" id="sd-tools-chevron">›</span>
+    </div>
+    <div class="sd-submenu" id="sd-tools-submenu">
+      <a href="/?cat=tools&tag=python-tools" class="sd-item sd-sub">
+        <span class="sd-item-icon">🐍</span>
+        <span class="sd-item-text" data-en="Python Tools" data-ar="أدوات Python">Python Tools</span>
+      </a>
+      <a href="/?cat=tools&tag=site-checker" class="sd-item sd-sub">
+        <span class="sd-item-icon">🔍</span>
+        <span class="sd-item-text" data-en="Website Checkers" data-ar="أدوات فحص المواقع">Website Checkers</span>
+      </a>
+      <a href="/?cat=tools&tag=seo" class="sd-item sd-sub">
+        <span class="sd-item-icon">📈</span>
+        <span class="sd-item-text" data-en="SEO Tools" data-ar="أدوات SEO">SEO Tools</span>
+      </a>
+      <a href="/?cat=tools&tag=data" class="sd-item sd-sub">
+        <span class="sd-item-icon">📊</span>
+        <span class="sd-item-text" data-en="Data Tools" data-ar="أدوات البيانات">Data Tools</span>
+      </a>
+      <a href="/?cat=tools&tag=file-convert" class="sd-item sd-sub">
+        <span class="sd-item-icon">🔄</span>
+        <span class="sd-item-text" data-en="File & Conversion" data-ar="أدوات الملفات والتحويل">File & Conversion</span>
+      </a>
+      <a href="/?cat=tools&tag=dev-tools" class="sd-item sd-sub">
+        <span class="sd-item-icon">👨‍💻</span>
+        <span class="sd-item-text" data-en="Developer Tools" data-ar="أدوات المطورين">Developer Tools</span>
+      </a>
+    </div>
+
+    <!-- 4. Projects & Scripts -->
+    <div class="sd-item sd-expandable" id="sd-projects-toggle">
+      <span class="sd-item-icon">⚡</span>
+      <span class="sd-item-text" data-en="Projects & Scripts" data-ar="مشاريع وScripts">Projects & Scripts</span>
+      <span class="sd-chevron" id="sd-projects-chevron">›</span>
+    </div>
+    <div class="sd-submenu" id="sd-projects-submenu">
+      <a href="/?cat=projects&tag=python-scripts" class="sd-item sd-sub">
+        <span class="sd-item-icon">🐍</span>
+        <span class="sd-item-text" data-en="Python Scripts" data-ar="Python Scripts">Python Scripts</span>
+      </a>
+      <a href="/?cat=projects&tag=fastapi" class="sd-item sd-sub">
+        <span class="sd-item-icon">🚀</span>
+        <span class="sd-item-text" data-en="FastAPI" data-ar="FastAPI">FastAPI</span>
+      </a>
+      <a href="/?cat=projects&tag=scraping" class="sd-item sd-sub">
+        <span class="sd-item-icon">🕷️</span>
+        <span class="sd-item-text" data-en="Web Scraping" data-ar="Web Scraping">Web Scraping</span>
+      </a>
+      <a href="/?cat=projects&tag=automation" class="sd-item sd-sub">
+        <span class="sd-item-icon">🤖</span>
+        <span class="sd-item-text" data-en="Automation" data-ar="Automation">Automation</span>
+      </a>
+      <a href="/?cat=projects&tag=apis" class="sd-item sd-sub">
+        <span class="sd-item-icon">🔌</span>
+        <span class="sd-item-text" data-en="APIs" data-ar="APIs">APIs</span>
+      </a>
+      <a href="/?cat=projects&tag=cli" class="sd-item sd-sub">
+        <span class="sd-item-icon">⌨️</span>
+        <span class="sd-item-text" data-en="CLI Tools" data-ar="أدوات CLI">CLI Tools</span>
+      </a>
+    </div>
+
+    <!-- 5. AI Solutions -->
+    <div class="sd-item sd-expandable" id="sd-ai-toggle">
+      <span class="sd-item-icon">🧠</span>
+      <span class="sd-item-text" data-en="AI Solutions" data-ar="حلول الذكاء الاصطناعي">AI Solutions</span>
+      <span class="sd-chevron" id="sd-ai-chevron">›</span>
+    </div>
+    <div class="sd-submenu" id="sd-ai-submenu">
+      <a href="/?cat=ai&tag=agents" class="sd-item sd-sub">
+        <span class="sd-item-icon">🦾</span>
+        <span class="sd-item-text" data-en="AI Agents" data-ar="AI Agents">AI Agents</span>
+      </a>
+      <a href="/?cat=ai&tag=rag" class="sd-item sd-sub">
+        <span class="sd-item-icon">📚</span>
+        <span class="sd-item-text" data-en="RAG" data-ar="RAG">RAG</span>
+      </a>
+      <a href="/?cat=ai&tag=chatbots" class="sd-item sd-sub">
+        <span class="sd-item-icon">💬</span>
+        <span class="sd-item-text" data-en="Chatbots" data-ar="Chatbots">Chatbots</span>
+      </a>
+      <a href="/?cat=ai&tag=documents" class="sd-item sd-sub">
+        <span class="sd-item-icon">📑</span>
+        <span class="sd-item-text" data-en="Document Processing" data-ar="معالجة المستندات">Document Processing</span>
+      </a>
+      <a href="/?cat=ai&tag=text-analysis" class="sd-item sd-sub">
+        <span class="sd-item-icon">🔎</span>
+        <span class="sd-item-text" data-en="Text & Data Analysis" data-ar="تحليل النصوص والبيانات">Text & Data Analysis</span>
+      </a>
+      <a href="/?cat=ai&tag=ai-automation" class="sd-item sd-sub">
+        <span class="sd-item-icon">⚡</span>
+        <span class="sd-item-text" data-en="AI Automation" data-ar="أتمتة بالـAI">AI Automation</span>
+      </a>
+    </div>
+
+    <!-- 6. Automation & Workflow -->
+    <div class="sd-item sd-expandable" id="sd-automation-toggle">
+      <span class="sd-item-icon">🔄</span>
+      <span class="sd-item-text" data-en="Automation & Workflow" data-ar="الأتمتة وWorkflow">Automation & Workflow</span>
+      <span class="sd-chevron" id="sd-automation-chevron">›</span>
+    </div>
+    <div class="sd-submenu" id="sd-automation-submenu">
+      <a href="/?cat=automation&tag=n8n" class="sd-item sd-sub">
+        <span class="sd-item-icon">🔗</span>
+        <span class="sd-item-text" data-en="n8n" data-ar="n8n">n8n</span>
+      </a>
+      <a href="/?cat=automation&tag=email" class="sd-item sd-sub">
+        <span class="sd-item-icon">📧</span>
+        <span class="sd-item-text" data-en="Email Automation" data-ar="أتمتة البريد">Email Automation</span>
+      </a>
+      <a href="/?cat=automation&tag=files" class="sd-item sd-sub">
+        <span class="sd-item-icon">📁</span>
+        <span class="sd-item-text" data-en="File Automation" data-ar="أتمتة الملفات">File Automation</span>
+      </a>
+      <a href="/?cat=automation&tag=reports" class="sd-item sd-sub">
+        <span class="sd-item-icon">📊</span>
+        <span class="sd-item-text" data-en="Report Automation" data-ar="أتمتة التقارير">Report Automation</span>
+      </a>
+      <a href="/?cat=automation&tag=business" class="sd-item sd-sub">
+        <span class="sd-item-icon">💼</span>
+        <span class="sd-item-text" data-en="Business Automation" data-ar="أتمتة الأعمال">Business Automation</span>
+      </a>
+    </div>
+
+    <!-- 7. Data & Databases -->
+    <div class="sd-item sd-expandable" id="sd-data-toggle">
+      <span class="sd-item-icon">🗄️</span>
+      <span class="sd-item-text" data-en="Data & Databases" data-ar="بيانات وقواعد بيانات">Data & Databases</span>
+      <span class="sd-chevron" id="sd-data-chevron">›</span>
+    </div>
+    <div class="sd-submenu" id="sd-data-submenu">
+      <a href="/?cat=data&tag=excel-csv" class="sd-item sd-sub">
+        <span class="sd-item-icon">📊</span>
+        <span class="sd-item-text" data-en="Excel / CSV" data-ar="Excel/CSV">Excel / CSV</span>
+      </a>
+      <a href="/?cat=data&tag=sql" class="sd-item sd-sub">
+        <span class="sd-item-icon">🗃️</span>
+        <span class="sd-item-text" data-en="SQL" data-ar="SQL">SQL</span>
+      </a>
+      <a href="/?cat=data&tag=postgresql" class="sd-item sd-sub">
+        <span class="sd-item-icon">🐘</span>
+        <span class="sd-item-text" data-en="PostgreSQL" data-ar="PostgreSQL">PostgreSQL</span>
+      </a>
+      <a href="/?cat=data&tag=db-templates" class="sd-item sd-sub">
+        <span class="sd-item-icon">📋</span>
+        <span class="sd-item-text" data-en="Database Templates" data-ar="قوالب قواعد البيانات">Database Templates</span>
+      </a>
+      <a href="/?cat=data&tag=cleaning" class="sd-item sd-sub">
+        <span class="sd-item-icon">🧹</span>
+        <span class="sd-item-text" data-en="Data Cleaning" data-ar="تنظيف وتحويل البيانات">Data Cleaning</span>
+      </a>
+    </div>
+
+    <!-- 8. Web Interfaces & Templates -->
+    <div class="sd-item sd-expandable" id="sd-web-toggle">
+      <span class="sd-item-icon">🌐</span>
+      <span class="sd-item-text" data-en="Web UI & Templates" data-ar="واجهات وقوالب مواقع">Web UI & Templates</span>
+      <span class="sd-chevron" id="sd-web-chevron">›</span>
+    </div>
+    <div class="sd-submenu" id="sd-web-submenu">
+      <a href="/?cat=web&tag=html-css-js" class="sd-item sd-sub">
+        <span class="sd-item-icon">🎨</span>
+        <span class="sd-item-text" data-en="HTML/CSS/JS" data-ar="HTML/CSS/JS">HTML/CSS/JS</span>
+      </a>
+      <a href="/?cat=web&tag=landing" class="sd-item sd-sub">
+        <span class="sd-item-icon">🚀</span>
+        <span class="sd-item-text" data-en="Landing Pages" data-ar="صفحات هبوط">Landing Pages</span>
+      </a>
+      <a href="/?cat=web&tag=dashboards" class="sd-item sd-sub">
+        <span class="sd-item-icon">📊</span>
+        <span class="sd-item-text" data-en="Dashboards" data-ar="لوحات تحكم">Dashboards</span>
+      </a>
+      <a href="/?cat=web&tag=fastapi-jinja" class="sd-item sd-sub">
+        <span class="sd-item-icon">⚡</span>
+        <span class="sd-item-text" data-en="FastAPI / Jinja" data-ar="قوالب FastAPI/Jinja">FastAPI / Jinja</span>
+      </a>
+      <a href="/?cat=web&tag=ui-kits" class="sd-item sd-sub">
+        <span class="sd-item-icon">🧩</span>
+        <span class="sd-item-text" data-en="UI Kits" data-ar="UI Kits">UI Kits</span>
+      </a>
+    </div>
+
+    <!-- 9. Developer Packs -->
+    <div class="sd-item sd-expandable" id="sd-devpacks-toggle">
+      <span class="sd-item-icon">📦</span>
+      <span class="sd-item-text" data-en="Developer Packs" data-ar="حزم المطورين">Developer Packs</span>
+      <span class="sd-chevron" id="sd-devpacks-chevron">›</span>
+    </div>
+    <div class="sd-submenu" id="sd-devpacks-submenu">
+      <a href="/?cat=devpacks&tag=boilerplates" class="sd-item sd-sub">
+        <span class="sd-item-icon">🏗️</span>
+        <span class="sd-item-text" data-en="Boilerplates" data-ar="Boilerplates">Boilerplates</span>
+      </a>
+      <a href="/?cat=devpacks&tag=starter-kits" class="sd-item sd-sub">
+        <span class="sd-item-icon">🚀</span>
+        <span class="sd-item-text" data-en="Starter Kits" data-ar="Starter Kits">Starter Kits</span>
+      </a>
+      <a href="/?cat=devpacks&tag=auth" class="sd-item sd-sub">
+        <span class="sd-item-icon">🔐</span>
+        <span class="sd-item-text" data-en="Authentication" data-ar="Authentication">Authentication</span>
+      </a>
+      <a href="/?cat=devpacks&tag=admin" class="sd-item sd-sub">
+        <span class="sd-item-icon">🛠️</span>
+        <span class="sd-item-text" data-en="Admin Panels" data-ar="Admin Panels">Admin Panels</span>
+      </a>
+      <a href="/?cat=devpacks&tag=api-templates" class="sd-item sd-sub">
+        <span class="sd-item-icon">🔌</span>
+        <span class="sd-item-text" data-en="API Templates" data-ar="API Templates">API Templates</span>
+      </a>
+      <a href="/?cat=devpacks&tag=docker" class="sd-item sd-sub">
+        <span class="sd-item-icon">🐳</span>
+        <span class="sd-item-text" data-en="Docker Templates" data-ar="Docker Templates">Docker Templates</span>
+      </a>
+    </div>
+
+    <!-- 10. Digital Services -->
+    <div class="sd-item sd-expandable" id="sd-services-toggle">
+      <span class="sd-item-icon">💼</span>
+      <span class="sd-item-text" data-en="Digital Services" data-ar="خدمات رقمية">Digital Services</span>
+      <span class="sd-chevron" id="sd-services-chevron">›</span>
+    </div>
+    <div class="sd-submenu" id="sd-services-submenu">
+      <a href="/?cat=services&tag=custom-tool" class="sd-item sd-sub">
+        <span class="sd-item-icon">🛠️</span>
+        <span class="sd-item-text" data-en="Custom Tool Dev" data-ar="تطوير أداة مخصصة">Custom Tool Dev</span>
+      </a>
+      <a href="/?cat=services&tag=process-automation" class="sd-item sd-sub">
+        <span class="sd-item-icon">⚙️</span>
+        <span class="sd-item-text" data-en="Process Automation" data-ar="أتمتة عملية">Process Automation</span>
+      </a>
+      <a href="/?cat=services&tag=api-integration" class="sd-item sd-sub">
+        <span class="sd-item-icon">🔌</span>
+        <span class="sd-item-text" data-en="API Integration" data-ar="دمج API">API Integration</span>
+      </a>
+      <a href="/?cat=services&tag=agent-dev" class="sd-item sd-sub">
+        <span class="sd-item-icon">🦾</span>
+        <span class="sd-item-text" data-en="Agent Development" data-ar="تطوير Agent">Agent Development</span>
+      </a>
+      <a href="/?cat=services&tag=file-processing" class="sd-item sd-sub">
+        <span class="sd-item-icon">📁</span>
+        <span class="sd-item-text" data-en="File Analysis & Processing" data-ar="تحليل/معالجة ملفات">File Analysis & Processing</span>
+      </a>
+    </div>
+
+    <div class="sd-divider"></div>
+
+    <!-- ===== Featured Sections ===== -->
+    <div class="sd-section-label" data-en="Featured" data-ar="مميز">Featured</div>
+
+    <a href="/?tab=most-wanted" class="sd-item">
+      <span class="sd-item-icon">🔥</span>
+      <span class="sd-item-text" data-en="Most Wanted" data-ar="الأكثر طلباً">Most Wanted</span>
     </a>
 
-    <a href="/?tab=deals" class="sd-item">
-      <span class="sd-item-icon">🔥</span>
-      <span class="sd-item-text" data-en="Today's Deals" data-ar="عروض اليوم">Today's Deals</span>
+    <a href="/?tab=new" class="sd-item">
+      <span class="sd-item-icon">🆕</span>
+      <span class="sd-item-text" data-en="New in Store" data-ar="جديد المتجر">New in Store</span>
+    </a>
+
+    <a href="/?tab=offers" class="sd-item">
+      <span class="sd-item-icon">💰</span>
+      <span class="sd-item-text" data-en="Offers & Bundles" data-ar="عروض وباقات">Offers & Bundles</span>
+    </a>
+
+    <a href="/?tab=free" class="sd-item">
+      <span class="sd-item-icon">🎁</span>
+      <span class="sd-item-text" data-en="Free" data-ar="مجاني">Free</span>
     </a>
 
     <div class="sd-divider"></div>
@@ -95,8 +401,6 @@
     </a>
 
   </div>
-
-
 </div>
 <!-- ===== /STORE DRAWER ===== -->
 
@@ -107,11 +411,11 @@
   <div class="store-top-bar">
     <div class="container">
       <ul class="store-top-menu">
-        <li><a href="/?tab=best"  data-en="Best Sellers"    data-ar="الأكثر مبيعاً">Best Sellers</a></li>
-        <li><a href="/?tab=gifts" data-en="Gift Ideas"      data-ar="هدايا">Gift Ideas</a></li>
-        <li><a href="/?tab=new"   data-en="New Releases"    data-ar="وصل حديثاً">New Releases</a></li>
-        <li><a href="/?tab=deals" data-en="Today's Deals"   data-ar="عروض اليوم">Today's Deals</a></li>
-        <li><a href="/?tab=support" data-en="Customer Service" data-ar="خدمة العملاء">Customer Service</a></li>
+        <li><a href="/?tab=most-wanted" data-en="Most Wanted" data-ar="الأكثر طلباً">Most Wanted</a></li>
+        <li><a href="/?tab=new"         data-en="New in Store" data-ar="جديد المتجر">New in Store</a></li>
+        <li><a href="/?tab=offers"      data-en="Offers & Bundles" data-ar="عروض وباقات">Offers & Bundles</a></li>
+        <li><a href="/?tab=free"        data-en="Free" data-ar="مجاني">Free</a></li>
+        <li><a href="/?tab=support"     data-en="Customer Service" data-ar="خدمة العملاء">Customer Service</a></li>
       </ul>
     </div>
   </div>
@@ -134,8 +438,8 @@
         <!-- Search (desktop) -->
         <div class="store-search-wrap">
           <input type="text" class="store-search-input"
-                 data-en-placeholder="Search products..." data-ar-placeholder="ابحث عن منتج..."
-                 placeholder="Search products...">
+                 data-en-placeholder="Search for a solution..." data-ar-placeholder="ابحث عن حل..."
+                 placeholder="Search for a solution...">
           <button class="store-search-btn" aria-label="Search">
             <i class="fa fa-search"></i>
           </button>
@@ -175,42 +479,46 @@
   <div class="container">
     <div id="my_slider" class="carousel slide" data-ride="carousel">
       <div class="carousel-inner">
+
         <div class="carousel-item active">
           <div class="row">
             <div class="col-sm-12">
-              <h1 class="banner_taital" data-en="Start Your Favourite Shopping" data-ar="ابدأ تسوقك المفضل">
-                Start Your Favourite Shopping
+              <h1 class="banner_taital" data-en="Ready Digital Solutions, Not Just Files" data-ar="حلول رقمية جاهزة، وليست مجرد ملفات">
+                Ready Digital Solutions, Not Just Files
               </h1>
               <div class="buynow_bt">
-                <a href="/?tab=fashion" data-en="Shop Now" data-ar="تسوق الآن">Shop Now</a>
+                <a href="/?tab=most-wanted" data-en="Explore Solutions" data-ar="استكشف الحلول">Explore Solutions</a>
               </div>
             </div>
           </div>
         </div>
+
         <div class="carousel-item">
           <div class="row">
             <div class="col-sm-12">
-              <h1 class="banner_taital" data-en="Discover New Arrivals" data-ar="اكتشف الوصول الجديد">
-                Discover New Arrivals
+              <h1 class="banner_taital" data-en="Automate Your Work with AI & Python" data-ar="أتمت عملك بالذكاء الاصطناعي وPython">
+                Automate Your Work with AI & Python
               </h1>
               <div class="buynow_bt">
-                <a href="/?tab=electronic" data-en="Explore" data-ar="استكشف">Explore</a>
+                <a href="/?cat=ai" data-en="AI & Automation" data-ar="AI والأتمتة">AI & Automation</a>
               </div>
             </div>
           </div>
         </div>
+
         <div class="carousel-item">
           <div class="row">
             <div class="col-sm-12">
-              <h1 class="banner_taital" data-en="Best Deals Every Day" data-ar="أفضل العروض كل يوم">
-                Best Deals Every Day
+              <h1 class="banner_taital" data-en="Templates, Tools & Starter Kits" data-ar="قوالب وأدوات وحزم جاهزة">
+                Templates, Tools & Starter Kits
               </h1>
               <div class="buynow_bt">
-                <a href="/?tab=jewellery" data-en="View Deals" data-ar="اعرض العروض">View Deals</a>
+                <a href="/?tab=offers" data-en="View Offers" data-ar="اعرض العروض">View Offers</a>
               </div>
             </div>
           </div>
         </div>
+
       </div>
       <a class="carousel-control-prev" href="#my_slider" role="button" data-slide="prev">
         <i class="fa fa-angle-left"></i>
@@ -225,16 +533,18 @@
 </div><!-- /.banner_bg_main -->
 
 <script>
-// Products submenu toggle
+// Generic expandable submenu handler
 (function() {
-  var toggle = document.getElementById('sd-products-toggle');
-  var submenu = document.getElementById('sd-products-submenu');
-  var chevron = document.getElementById('sd-products-chevron');
-  if (toggle) {
+  var expandables = document.querySelectorAll('.sd-expandable');
+  expandables.forEach(function(toggle) {
+    var id = toggle.id.replace('-toggle', '-submenu');
+    var submenu = document.getElementById(id);
+    var chevron = toggle.querySelector('.sd-chevron');
+    if (!submenu) return;
     toggle.addEventListener('click', function() {
       var open = submenu.classList.toggle('open');
       if (chevron) chevron.style.transform = open ? 'rotate(90deg)' : '';
     });
-  }
+  });
 })();
 </script>
