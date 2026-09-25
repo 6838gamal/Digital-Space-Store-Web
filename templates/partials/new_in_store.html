@@ -1,0 +1,38 @@
+<!-- ===== NEW IN STORE ===== -->
+<section class="product-row-section layout_padding">
+  <div class="container">
+
+    <div class="section-header-row">
+      <h2 class="section-title">
+        🆕 <span data-en="New in Store" data-ar="جديد المتجر">New in Store</span>
+      </h2>
+      <a href="/?tab=new" class="see-all" data-en="See all →" data-ar="عرض الكل ←">See all →</a>
+    </div>
+
+    <div class="product-scroll">
+
+      {% if new_products %}
+        {% for product in new_products %}
+        <div class="product-card">
+          <div class="product-badge">🆕</div>
+          <a href="/product/{{ product.id }}">
+            <img src="{{ product.image }}" alt="{{ product.name }}" class="product-img">
+            <h3 class="product-name">{{ product.name }}</h3>
+          </a>
+          <div class="product-price">{{ product.price }} $</div>
+          <button class="add-to-cart-btn" data-id="{{ product.id }}">
+            <i class="fa fa-shopping-cart"></i>
+            <span data-en="Add" data-ar="أضف">Add</span>
+          </button>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="empty-msg" data-en="No new products yet." data-ar="لا توجد منتجات جديدة بعد.">
+          No new products yet.
+        </p>
+      {% endif %}
+
+    </div>
+  </div>
+</section>
+<!-- ===== /NEW IN STORE ===== -->
