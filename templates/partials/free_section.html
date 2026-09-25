@@ -1,0 +1,37 @@
+<!-- ===== FREE SECTION ===== -->
+<section class="free-section layout_padding">
+  <div class="container">
+
+    <div class="section-header">
+      <h2 class="section-title">🎁 <span data-en="Free" data-ar="مجاني">Free</span></h2>
+      <p class="section-subtitle" data-en="Try before you buy" data-ar="جرّب قبل أن تشتري">
+        Try before you buy
+      </p>
+    </div>
+
+    <div class="product-scroll">
+      {% if free_products %}
+        {% for product in free_products %}
+        <div class="product-card">
+          <div class="product-badge">🎁</div>
+          <a href="/product/{{ product.id }}">
+            <img src="{{ product.image }}" alt="{{ product.name }}" class="product-img">
+            <h3 class="product-name">{{ product.name }}</h3>
+          </a>
+          <div class="product-price" data-en="Free" data-ar="مجاني">Free</div>
+          <button class="add-to-cart-btn" data-id="{{ product.id }}">
+            <i class="fa fa-download"></i>
+            <span data-en="Download" data-ar="حمّل">Download</span>
+          </button>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="empty-msg" data-en="No free products yet." data-ar="لا توجد منتجات مجانية بعد.">
+          No free products yet.
+        </p>
+      {% endif %}
+    </div>
+
+  </div>
+</section>
+<!-- ===== /FREE SECTION ===== -->
